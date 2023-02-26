@@ -52,16 +52,13 @@ function buildCertificationOfResidence(namePart, serialPart, issueDate) {
   //
   // gather all 'submitted medical report' and 'Not yet publish Certification of Residence'
   //
-  // 입사 학생 총 수
-  const numberOfData = listsSheet.getLastRow() - 1;
-  console.log(numberOfData);
   listsSheet.getRange(3,5, numberOfData, 13).getValues().forEach(value => {
     console.log(value);  
     if(!isCellEmpty(value[7])) {
       // 건강진단서를 제출한 학생들 중
       if(isCellEmpty(value[12]) || !value[12].startsWith("https://drive.google.com/")) {
         // 아직 발급이 되지 않은 학생들 
-        serialPart = buildCertificationOfResidenceBySelect(value[0], namePart, serialPart, issueDate, numberOfData);
+        serialPart = buildCertificationOfResidenceBySelect(value[0], namePart, serialPart, issueDate);
       }
     }
   })
@@ -70,11 +67,9 @@ function buildCertificationOfResidence(namePart, serialPart, issueDate) {
 function buildCertificationOfResidenceBySelect(studentId, namePart, serialPart, issueDate) {
   // left padding
   var paddedSerialPart = serialPart.toString().padStart(3,0);
-  // 입사 학생 총 수
-  const numberOfData = listsSheet.getLastRow();
   var urlOrError;
   try {
-    var studentInfo = getStudentInfo(studentId, numberOfData);
+    var studentInfo = getStudentInfo(studentId);
     /**
      * 입사일은 따로 설정하지 않고 발행일과 동일하게 설정하면 되겠습니다. 
      * 규정 상 입사일로부터 14일 이내에 거주 신고를 하여야 하는데, 단체 접수 특성 상 이 기간이 맞지 않습니다. 
@@ -106,6 +101,8 @@ function buildCertificationOfResidenceBySelect(studentId, namePart, serialPart, 
   catch(e) {
     urlOrError = e;
   }
+  // 입사 학생 총 수
+  const numberOfData = listsSheet.getLastRow(); 
   listsSheet.getRange("E3:E" + (3+numberOfData)).getValues().forEach((id, index) => {
     if(id == studentId) {
       listsSheet.getRange(index + 3, 17).setValue(urlOrError);
@@ -117,7 +114,9 @@ function buildCertificationOfResidenceBySelect(studentId, namePart, serialPart, 
 /**
  * DataSheet 에서 matching 되는 학생 정보를 찾는다. 
  */
-function getStudentInfo(studentId, numberOfData) {
+function getStudentInfo(studentId) {
+  // 입사 학생 총 수
+  const numberOfData = listsSheet.getLastRow();   
   var studentData; 
   listsSheet.getRange("E3:E" + (3+numberOfData)).getValues().forEach((id, index) => {
     if(id == studentId) {
