@@ -1,13 +1,16 @@
 const ws = SpreadsheetApp.getActiveSpreadsheet();
 const listsSheet = ws.getSheetByName("현황");
-const configSheet = ws.getSheetByName("Config");
+const CONFIG_SHEET_NAME = 'Config';
+const configSheet = ws.getSheetByName(CONFIG_SHEET_NAME);
 /** 
- * Creates the menu item "Select EmailAddress" for user to run scripts on drop-down.
+ * Creates the menu items for user to run scripts on drop-down.
  */
 function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Gather Data')
       .addItem('Select EmailAddress', 'selectEmailAddress')
+      .addItem('거주증명서 전체 생성', 'showAllDialog')
+      .addItem('거주증명서 수동 생성', 'showSelectDialog')
       .addToUi();
 }
 

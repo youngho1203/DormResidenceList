@@ -1,0 +1,290 @@
+/**
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+const APP_TITLE = 'CertificationOfResidence';
+// 거주증명서 docs Template File 
+const TEMPLATE_FILE_ID = '1GfxiSCucUEGVgffaahLzetvKUIah-M1-XmA4cupd988';
+// ArrivalSurvey(응답) SpreadSheet File
+const ARRIVAL_SURVEY_ID = '1un0sKJqgmA_ZbJMwLo9MTHzxFYpPqJBB35qdlKUaWm0';
+// 생성된 거주 증명서 저장 Folder Name
+const OUTPUT_FOLDER_NAME = 'CertificationOfResitancePdfFolder';
+
+function showSelectDialog() {
+  // Display a modal dialog box with custom HtmlService content.
+  var dialog = HtmlService.createHtmlOutputFromFile("ManualDialog.html");
+  SpreadsheetApp.getUi().showModalDialog(dialog, '발행할 학번, 발행번호, 발행날짜를 입력하세요');
+}
+function showAllDialog() {
+  // Display a modal dialog box with custom HtmlService content.
+  var dialog = HtmlService.createHtmlOutputFromFile("AutoDialog.html");
+  SpreadsheetApp.getUi().showModalDialog(dialog, '발행할 첫번째 발행번호, 발행날짜를 입력하세요');
+}
+function getDataFromFormSubmit(form) {
+  if(form.issuedNumber == undefined || form.issuedNumber == '') {
+    SpreadsheetApp.getUi().alert('IssueNumber 를 입력하세요.');
+    return;
+  }
+  var issuedNumber = form.issuedNumber;
+  //      
+  var matched = issuedNumber.match(/\d+$/);
+  var namePart = issuedNumber.substring(0, matched.index);
+  var serialPart = matched[0];  
+  //
+  if(form.studentId) {
+    buildCertificationOfResidenceBySelect(form.studentId, namePart, serialPart, form.issueDate);
+  }
+  else {
+    buildCertificationOfResidence(namePart, serialPart, form.issueDate);
+  }
+}
+
+function buildCertificationOfResidence(namePart, serialPart, issueDate) {
+  //
+  // gather all 'submitted medical report' and 'Not yet publish Certification of Residence'
+  //
+  // 입사 학생 총 수
+  const numberOfData = listsSheet.getLastRow() - 1;
+  console.log(numberOfData);
+  listsSheet.getRange(3,5, numberOfData, 13).getValues().forEach(value => {
+    console.log(value);  
+    if(!isCellEmpty(value[7])) {
+      // 건강진단서를 제출한 학생들 중
+      if(isCellEmpty(value[12]) || !value[12].startsWith("https://drive.google.com/")) {
+        // 아직 발급이 되지 않은 학생들 
+        serialPart = buildCertificationOfResidenceBySelect(value[0], namePart, serialPart, issueDate, numberOfData);
+      }
+    }
+  })
+}
+
+function buildCertificationOfResidenceBySelect(studentId, namePart, serialPart, issueDate) {
+  // left padding
+  var paddedSerialPart = serialPart.toString().padStart(3,0);
+  // 입사 학생 총 수
+  const numberOfData = listsSheet.getLastRow();
+  var urlOrError;
+  try {
+    var studentInfo = getStudentInfo(studentId, numberOfData);
+    /**
+     * 입사일은 따로 설정하지 않고 발행일과 동일하게 설정하면 되겠습니다. 
+     * 규정 상 입사일로부터 14일 이내에 거주 신고를 하여야 하는데, 단체 접수 특성 상 이 기간이 맞지 않습니다. 
+     * 또 여러 비슷한 이유로 일어나는 문제 발생을 막기 위하여 입사일=발행일로 통일하고 있습니다. 
+     * - 재훈사감 -
+     */
+    studentInfo.checkInDate = issueDate;
+    //
+    const surveySheet = SpreadsheetApp.openById(ARRIVAL_SURVEY_ID);
+    var config = surveySheet.getSheetByName(CONFIG_SHEET_NAME);
+    var dormitoryInfo = getDormitoryInfo(config, studentInfo.roomNumber);
+    var data = {
+      'studentId': studentInfo.studentId,
+      '문서번호': namePart + paddedSerialPart,
+      '입주일' : studentInfo.checkInDate,
+      '주소' : dormitoryInfo.주소 + ' ' + studentInfo.roomNumber + '호',
+      'Address' : '#' + studentInfo.roomNumber + ', ' + dormitoryInfo.Address,
+      'MoveInDate': studentInfo.checkInDate,
+      'Name' : studentInfo.name,
+      'StudentIDNumber':studentId,
+      'BirthDay':studentInfo.birthDay,
+      // @todo : 날짜 지정 ????
+      '발급일자': issueDate // new Date().toISOString().substring(0, 10)
+    };
+    //  
+    urlOrError = doProcess(data);
+    serialPart++
+  }
+  catch(e) {
+    urlOrError = e;
+  }
+  listsSheet.getRange("E3:E" + (3+numberOfData)).getValues().forEach((id, index) => {
+    if(id == studentId) {
+      listsSheet.getRange(index + 3, 17).setValue(urlOrError);
+    }
+  });
+  return serialPart;
+}
+
+/**
+ * DataSheet 에서 matching 되는 학생 정보를 찾는다. 
+ */
+function getStudentInfo(studentId, numberOfData) {
+  var studentData; 
+  listsSheet.getRange("E3:E" + (3+numberOfData)).getValues().forEach((id, index) => {
+    if(id == studentId) {
+      studentData = listsSheet.getRange(index + 3, 1, 1, 17).getValues()[0];
+    }
+  });
+
+  if(studentData){
+    if(isCellEmpty(studentData[6])){
+      throw new Error("생년월일의 값이 설정되어 있어야 합니다.");
+    };
+    return { 
+      'studentId':studentData[4], 
+      'name':studentData[5], 
+      'birthDay':studentData[6].toISOString().substring(0, 10), // cell format 이 date 로 설정되어 있어야 한다.
+      'checkInDate': '',
+      'roomNumber':studentData[1]
+      };
+  }
+  return undefined;
+}
+
+function getDormitoryInfo(dormitoryConfigSheet, roomNumber) {
+  var dormitoryData;
+  var lastLow = dormitoryConfigSheet.getLastRow();
+  dormitoryConfigSheet.getRange("B2:B" + (1 + lastLow)).getValues().forEach((id, index) => {
+    if(id == roomNumber) {
+      dormitoryData = dormitoryConfigSheet.getRange(index + 2, 1, 1, 5).getValues()[0];
+    }
+  });
+  if(dormitoryData){
+    return { 
+      'noomNumber':dormitoryData[1],
+      '주소':dormitoryData[3],
+      'Address':dormitoryData[4] 
+      };
+  }
+  return undefined;  
+}
+
+function doProcess(data) {
+  // Retreive the template file and destination folder.
+  var template_file = DriveApp.getFileById(TEMPLATE_FILE_ID);
+  var template_copy = template_file.makeCopy(template_file.getName() + "(Copy)");
+  var document = DocumentApp.openById(template_copy.getId());
+  //
+  populateTemplate(document, data);
+  // console.log(document.getText());
+  //
+  document.saveAndClose();
+  // console.log(document.getId());
+  // Cleans up and creates PDF.
+  Utilities.sleep(500); // Using to offset any potential latency in creating .pdf  
+  //
+  // save pdf file
+  // save file name pattern : studentId_문서번호
+  var pdfName = data.studentId + '_' + data.문서번호;
+  var pdf = createPDF(document.getId(), pdfName);
+  template_copy.setTrashed(true);
+  //
+  return pdf.getUrl();
+}
+
+/**
+ * Creates a PDF for the customer given sheet.
+ * @param {string} ssId - Id of the Google Spreadsheet
+ * @param {object} sheet - Sheet to be converted as PDF
+ * @param {string} pdfName - File name of the PDF being created : studentId_roomNumberCode
+ * @return {file object} PDF file as a blob
+ */
+function createPDF(docsId, pdfName) {
+  // const fr = 0, fc = 0, lc = 9, lr = 27;
+  // const fr = 0, fc = 0, lc = 0, lr = 29;
+  const url = "https://docs.google.com/document/d/" + docsId + "/export" +
+    "?format=pdf&" +
+    "size=a4&" +          // paper A4 
+    "fzr=true&" +         // do not repeat row headers
+    "portrait=false&" +   // landscape
+    "fitw=true&" +        // fit to page width
+    "gridlines=false&" +
+    "printtitle=false&" +
+    "top_margin=0.30&" +
+    "bottom_margin=0.00&" +
+    "left_margin=0.60&" +
+    "right_margin=0.00&" +
+    "sheetnames=false&" +
+    "pagenum=false&" +
+    "attachment=true&"; /**  +
+    "gid=" + sheet.getSheetId();
+    */
+    /** 
+     * + "&r1=" + fr + "&c1=" + fc + "&r2=" + lr + "&c2=" + lc;
+     */
+  const params = { method: "GET", headers: { "authorization": "Bearer " + ScriptApp.getOAuthToken() } };
+  const blob = UrlFetchApp.fetch(url, params).getBlob().setName(pdfName + '.pdf');
+  // pdf file saved folder
+  const pdfFolder = getFolderByName_(OUTPUT_FOLDER_NAME);
+  // Gets the folder in Drive where the PDFs are stored.
+  return pdfFolder.createFile(blob);
+}
+
+/**
+ * data Object Structure
+ * 
+ * {{문서번호}}
+ * {{입주일}}
+ * ({{주소}})
+ * {{Address}}
+ * {{Move-in Date}}
+ * {{Name}}
+ * {{Student ID Number}}
+ * {{생년월일}}
+ * {{Birth}}
+ * {{발급일자}}
+ */
+// Helper function to inject data into the template
+function populateTemplate(document, data) {
+
+  // clear template
+  // 
+  // Get the document header and body (which contains the text we'll be replacing).
+  var document_header = document.getHeader();
+  var document_body = document.getBody();
+
+  // Replace variables in the header
+  for (var key in data) {
+    var match_text = `{{${key}}}`;
+    var value = data[key];
+
+    // Replace our template with the final values
+    if(document_header) {
+      document_header.replaceText(match_text, value);
+    }
+    document_body.replaceText(match_text, value);    
+  }
+}
+
+/**
+ * Returns a Google Drive folder in the same location 
+ * in Drive where the spreadsheet is located. First, it checks if the folder
+ * already exists and returns that folder. If the folder doesn't already
+ * exist, the script creates a new one. The folder's name is set by the
+ * "OUTPUT_FOLDER_NAME" variable from the Code.gs file.
+ *
+ * @param {string} folderName - Name of the Drive folder. 
+ * @return {object} Google Drive Folder
+ */
+function getFolderByName_(folderName) {
+  //
+  const parentFolder = DriveApp.getFileById(TEMPLATE_FILE_ID).getParents().next();
+  // Iterates the subfolders to check if the PDF folder already exists.
+  const subFolders = parentFolder.getFolders();
+  while (subFolders.hasNext()) {
+    let folder = subFolders.next();
+
+    // Returns the existing folder if found.
+    if (folder.getName() === folderName) {
+      return folder;
+    }
+  }
+  // Creates a new folder if one does not already exist.
+  return parentFolder.createFolder(folderName)
+    .setDescription(`Created by ${APP_TITLE} application to store PDF output files`);
+}
+
+// Returns true if the cell where cellData was read from is empty.
+function isCellEmpty(cellData) {
+  return typeof (cellData) == "string" && cellData == "";
+}
+
