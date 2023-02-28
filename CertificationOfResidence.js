@@ -192,7 +192,7 @@ function getDormitoryInfo(dormitoryConfigSheet, roomNumber) {
   return undefined;  
 }
 
-function doProcess(data) {
+function doProcess(data) {  
   // Retreive the template file and destination folder.
   var template_file = DriveApp.getFileById(TEMPLATE_FILE_ID);
   var template_copy = template_file.makeCopy(template_file.getName() + "(Copy)");
@@ -201,14 +201,15 @@ function doProcess(data) {
   populateTemplate(document, data);
   //
   document.saveAndClose();
-  // console.log(document.getId());
   // Cleans up and creates PDF.
   Utilities.sleep(500); // Using to offset any potential latency in creating .pdf  
+  // pdf file saved folder
+  const pdfFolder = getFolderByName_(template_file, OUTPUT_FOLDER_NAME);  
   //
   // save pdf file
   // save file name pattern : studentId_문서번호
   var pdfName = data.studentId + '_' + data.문서번호;
-  var pdf = createPDF(document.getId(), pdfName);
+  var pdf = createPDF(pdfFolder, document.getId(), pdfName);
   template_copy.setTrashed(true);
   //
   return pdf.getUrl();
@@ -216,12 +217,13 @@ function doProcess(data) {
 
 /**
  * Creates a PDF for the customer given sheet.
+ * @param {Object} pdfFolder pdf file saved folder
  * @param {string} ssId - Id of the Google Spreadsheet
  * @param {object} sheet - Sheet to be converted as PDF
  * @param {string} pdfName - File name of the PDF being created : studentId_roomNumberCode
  * @return {file object} PDF file as a blob
  */
-function createPDF(docsId, pdfName) {
+function createPDF(pdfFolder, docsId, pdfName) {
   // const fr = 0, fc = 0, lc = 9, lr = 27;
   // const fr = 0, fc = 0, lc = 0, lr = 29;
   const url = "https://docs.google.com/document/d/" + docsId + "/export" +
@@ -246,8 +248,6 @@ function createPDF(docsId, pdfName) {
      */
   const params = { method: "GET", headers: { "authorization": "Bearer " + ScriptApp.getOAuthToken() } };
   const blob = UrlFetchApp.fetch(url, params).getBlob().setName(pdfName + '.pdf');
-  // pdf file saved folder
-  const pdfFolder = getFolderByName_(OUTPUT_FOLDER_NAME);
   // Gets the folder in Drive where the PDFs are stored.
   return pdfFolder.createFile(blob);
 }
@@ -295,12 +295,13 @@ function populateTemplate(document, data) {
  * exist, the script creates a new one. The folder's name is set by the
  * "OUTPUT_FOLDER_NAME" variable from the Code.gs file.
  *
+ * @param {File} templateFile
  * @param {string} folderName - Name of the Drive folder. 
  * @return {object} Google Drive Folder
  */
-function getFolderByName_(folderName) {
+function getFolderByName_(templateFile, folderName) {
   //
-  const parentFolder = DriveApp.getFileById(TEMPLATE_FILE_ID).getParents().next();
+  const parentFolder = templateFile.getParents().next();
   // Iterates the subfolders to check if the PDF folder already exists.
   const subFolders = parentFolder.getFolders();
   while (subFolders.hasNext()) {
