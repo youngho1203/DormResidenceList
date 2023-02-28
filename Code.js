@@ -17,11 +17,11 @@ function onOpen() {
 function selectEmailAddress() { 
   var emailAddress = [];
   var last_low = listsSheet.getLastRow();
-  listsSheet.getRange("E3:E" + last_low).getValues().forEach((studentId, index) => { if(studentId > 0) {
-    var address = listsSheet.getRange("P" + (3 + index)).getValue();
+  listsSheet.getRange("D3:E" + last_low).getValues().forEach((value, index) => { if(!value[0]) {
+    var address = listsSheet.getRange("Q" + (3 + index)).getValue();
     if(address !== '') {
       const studentName = listsSheet.getRange("F" + (3 + index)).getValue();
-      const emailCellData = [listsSheet.getRange("P" + (3 + index)).getBackground(), studentId, studentName, address ];
+      const emailCellData = [listsSheet.getRange("Q" + (3 + index)).getBackground(), value[1], studentName, address ];
       emailAddress.push(emailCellData);
     }
   }});
@@ -62,10 +62,6 @@ function onEdit(e) {
   var text_color = range_modified.getValue() ? "#980000" : "black";
   var style_builder = _range.getTextStyle().copy().setUnderline(false).setForegroundColor(text_color).setFontFamily(font_family);
   _range.setTextStyle(style_builder.setStrikethrough(range_modified.getValue()).build());
-  // studentId column
-  var id_range = listsSheet.getRange(row, 5);
-  var studentId = -1 * id_range.getValue();
-  id_range.setValue(studentId);
   // has_extension column
   _extension_cell.setTextStyle(cell_text_style);
 }
