@@ -12,12 +12,16 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 const APP_TITLE = 'CertificationOfResidence';
-// 거주증명서 docs Template File 
+// 거주증명서 docs Template File ( 적절하게 변경해야 함. ) 
 const TEMPLATE_FILE_ID = '1GfxiSCucUEGVgffaahLzetvKUIah-M1-XmA4cupd988';
-// ArrivalSurvey(응답) SpreadSheet File
+// ArrivalSurvey(응답) SpreadSheet File ( 적절하게 변경해야 함. ) 
 const ARRIVAL_SURVEY_ID = '1un0sKJqgmA_ZbJMwLo9MTHzxFYpPqJBB35qdlKUaWm0';
 // 생성된 거주 증명서 저장 Folder Name
 const OUTPUT_FOLDER_NAME = 'CertificationOfResitancePdfFolder';
+// 거주 증명서 발급된 Row Background Color 
+const BUILD_ROW_BACKGROUND_COLOR = '#e0e0e0';
+// Alphabet
+const ALPHABET = [ 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R',  'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z' ];
 
 function showSelectDialog() {
   // Display a modal dialog box with custom HtmlService content.
@@ -33,12 +37,15 @@ function getDataFromFormSubmit(form) {
   if(form.issuedNumber == undefined || form.issuedNumber == '') {
     SpreadsheetApp.getUi().alert('IssueNumber 를 입력하세요.');
     return;
-  }
+  }  
+  //
   var issuedNumber = form.issuedNumber;
   //      
   var matched = issuedNumber.match(/\d+$/);
   var namePart = issuedNumber.substring(0, matched.index);
   var serialPart = matched[0];  
+  //
+  backgroundReset();
   //
   if(form.studentId) {
     buildCertificationOfResidenceBySelect(form.studentId, namePart, serialPart, form.issueDate);
@@ -48,20 +55,47 @@ function getDataFromFormSubmit(form) {
   }
 }
 
+function backgroundReset() {
+  const lastRow = listsSheet.getLastRow();
+  const lastColumn = listsSheet.getLastColumn();
+  listsSheet.getRange("B3:" + ALPHABET[lastColumn -1] + lastRow).setBackground("white");
+}
+
 function buildCertificationOfResidence(namePart, serialPart, issueDate) {
   //
   // gather all 'submitted medical report' and 'Not yet publish Certification of Residence'
-  //
-  listsSheet.getRange(3,5, numberOfData, 13).getValues().forEach(value => {
-    console.log(value);  
-    if(!isCellEmpty(value[7])) {
-      // 건강진단서를 제출한 학생들 중
-      if(isCellEmpty(value[12]) || !value[12].startsWith("https://drive.google.com/")) {
-        // 아직 발급이 되지 않은 학생들 
-        serialPart = buildCertificationOfResidenceBySelect(value[0], namePart, serialPart, issueDate);
+  // '학번'부터 14 개 column
+  const lastLow = listsSheet.getLastRow();
+  listsSheet.getRange("D3:T" + lastLow).getValues().forEach((value, index) => {
+    if(value[0]) {
+      var range = listsSheet.getRange("A" + (3+index));
+      revokeBackground(range);
+    }
+    else {
+      // 현재 거주중인 학생들 중
+      if(!isCellEmpty(value[8])) {
+        // 건강진단서를 제출한 학생들 중
+        if(isCellEmpty(value[16]) || !value[16].startsWith("https://drive.google.com/")) {
+          // 아직 발급이 되지 않은 학생들 
+          serialPart = buildCertificationOfResidenceBySelect(value[1], namePart, serialPart, issueDate);
+        }
+        else {
+          var range = listsSheet.getRange("A" + (3+index));
+          revokeBackground(range);
+        }
+      }
+      else {
+        var range = listsSheet.getRange("A" + (3+index));
+        revokeBackground(range);     
       }
     }
   })
+}
+
+function revokeBackground(range) {
+  var background_color = range.getBackground();
+  var row = range.getRow();
+  listsSheet.getRange("B" + row + ":T" + row).setBackground(background_color);   
 }
 
 function buildCertificationOfResidenceBySelect(studentId, namePart, serialPart, issueDate) {
@@ -101,11 +135,12 @@ function buildCertificationOfResidenceBySelect(studentId, namePart, serialPart, 
   catch(e) {
     urlOrError = e;
   }
-  // 입사 학생 총 수
-  const numberOfData = listsSheet.getLastRow(); 
-  listsSheet.getRange("E3:E" + (3+numberOfData)).getValues().forEach((id, index) => {
+  //
+  const lastRow = listsSheet.getLastRow(); 
+  listsSheet.getRange("E3:E" + lastRow).getValues().forEach((id, index) => {
     if(id == studentId) {
-      listsSheet.getRange(index + 3, 17).setValue(urlOrError);
+      listsSheet.getRange("T" + (index + 3)).setValue(urlOrError)
+      listsSheet.getRange("B" + (index + 3) + ":T" + (index + 3)).setBackground(BUILD_ROW_BACKGROUND_COLOR);
     }
   });
   return serialPart;
@@ -164,7 +199,6 @@ function doProcess(data) {
   var document = DocumentApp.openById(template_copy.getId());
   //
   populateTemplate(document, data);
-  // console.log(document.getText());
   //
   document.saveAndClose();
   // console.log(document.getId());
