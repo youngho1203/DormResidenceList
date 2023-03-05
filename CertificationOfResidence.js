@@ -111,11 +111,16 @@ function buildCertificationOfResidenceBySelect(studentId, namePart, serialPart, 
      * - 재훈사감 -
      */
     studentInfo.checkInDate = issueDate;
+    console.log(studentInfo);
     //
     const surveySheet = SpreadsheetApp.openById(ARRIVAL_SURVEY_ID);
     var config = surveySheet.getSheetByName(CONFIG_SHEET_NAME);
     var dormitoryInfo = getDormitoryInfo(config, studentInfo.roomNumber);
-    var data = {
+
+    var data = buildData(studentInfo, dormitoryInfo, issueDate);
+    data.문서번호 = namePart + paddedSerialPart;
+    /**
+     * {
       'studentId': studentInfo.studentId,
       '문서번호': namePart + paddedSerialPart,
       '입주일' : studentInfo.checkInDate,
@@ -123,11 +128,15 @@ function buildCertificationOfResidenceBySelect(studentId, namePart, serialPart, 
       'Address' : '#' + studentInfo.roomNumber + ', ' + dormitoryInfo.Address,
       'MoveInDate': studentInfo.checkInDate,
       'Name' : studentInfo.name,
+      'Email': studentInfo.email,
+      'Phone': studentInfo.phone, 
       'StudentIDNumber':studentId,
       'BirthDay':studentInfo.birthDay,
       // @todo : 날짜 지정 ????
-      '발급일자': issueDate // new Date().toISOString().substring(0, 10)
+      '발급일자': issueDate, // new Date().toISOString().substring(0, 10),
+      '신청일자': issueDate
     };
+    */
     //  
     urlOrError = doProcess(data);
     serialPart++
@@ -146,6 +155,24 @@ function buildCertificationOfResidenceBySelect(studentId, namePart, serialPart, 
   return serialPart;
 }
 
+function buildData(studentInfo, dormitoryInfo, issueDate) {
+    return {
+      'StudentId': studentInfo.studentId,
+      /* '문서번호': namePart + paddedSerialPart, */
+      '입주일' : studentInfo.checkInDate,
+      '주소' : dormitoryInfo.주소 + ' ' + studentInfo.roomNumber + '호',
+      'Address' : '#' + studentInfo.roomNumber + ', ' + dormitoryInfo.Address,
+      'MoveInDate': studentInfo.checkInDate,
+      'Name' : studentInfo.name,
+      'Email': studentInfo.email,
+      'Phone': studentInfo.phone, 
+      /* 'StudentIDNumber':studentId,*/
+      'BirthDay':studentInfo.birthDay,
+      // @todo : 날짜 지정 ????
+      '발급일자': issueDate, // new Date().toISOString().substring(0, 10),
+      '신청일자': issueDate
+    };  
+}
 /**
  * DataSheet 에서 matching 되는 학생 정보를 찾는다. 
  */
@@ -163,12 +190,15 @@ function getStudentInfo(studentId) {
     if(isCellEmpty(studentData[6])){
       throw new Error("생년월일의 값이 설정되어 있어야 합니다.");
     };
+    console.log(studentData);
     return { 
       'studentId':studentData[4], 
       'name':studentData[5], 
       'birthDay':studentData[6].toISOString().substring(0, 10), // cell format 이 date 로 설정되어 있어야 한다.
       'checkInDate': '',
-      'roomNumber':studentData[1]
+      'roomNumber':studentData[1],
+      'phone': studentData[15],
+      'email':studentData[16]
       };
   }
   return undefined;
@@ -208,7 +238,7 @@ function doProcess(data) {
   //
   // save pdf file
   // save file name pattern : studentId_문서번호
-  var pdfName = data.studentId + '_' + data.문서번호;
+  var pdfName = data.StudentId + '_' + data.문서번호;
   var pdf = createPDF(pdfFolder, document.getId(), pdfName);
   template_copy.setTrashed(true);
   //

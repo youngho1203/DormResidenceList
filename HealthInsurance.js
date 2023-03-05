@@ -11,9 +11,27 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-function doPrintChangeRequest() {
-    const surveySheet = SpreadsheetApp.openById(ARRIVAL_SURVEY_ID);
-    var config = surveySheet.getSheetByName(CONFIG_SHEET_NAME);
+// 변경 신청서 docs Template File ( 적절하게 변경해야 함. ) 
+const INSURANCE_TEMPLATE_FILE_ID = '1IizRaNHtEN7zCJTtyLy79gHdEiABeBbNl-vQV1YWOSw';
+const INSURANCE_OUTPUT_FOLDER_NAME = 'HealthInsurancePdfFolder';
+
+function showHealthInsuranceDialog() {
+  // Display a modal dialog box with custom HtmlService content.
+  var dialog = HtmlService.createHtmlOutputFromFile("HealthDialog.html");
+  SpreadsheetApp.getUi().showModalDialog(dialog, '신청날짜를 입력하세요');
+}
+
+function getHealthDataFromFormSubmit(form) {
+  if(form.issueDate == undefined || form.issueDate == '') {
+    SpreadsheetApp.getUi().alert('신청날짜를 입력하세요.');
+    return;
+  }  
+  //
+  var issueDate = form.issueDate;  
+  
+  // DormitoryInfo 때문에 SurveySheet 가 필요하다.
+  const surveySheet = SpreadsheetApp.openById(ARRIVAL_SURVEY_ID);
+  var config = surveySheet.getSheetByName(CONFIG_SHEET_NAME);
   var last_low = listsSheet.getLastRow();
   // D : 퇴실 marker
   // Q : Email address
@@ -21,13 +39,16 @@ function doPrintChangeRequest() {
     //
     var studentInfo = getStudentInfo(value[1]);
     var dormitoryInfo = getDormitoryInfo(config, studentInfo.roomNumber);
-    var data = buildData(studentInfo, dormitoryInfo);
+    
+    var data = buildData(studentInfo, dormitoryInfo, issueDate);
     var pdf_url = doProcessInsurance(data);
+    console.log(pdf_url);
   }});
 }
 
 function doProcessInsurance(data) {
   // Retreive the template file and destination folder.
+  console.log(data);
   var template_file = DriveApp.getFileById(INSURANCE_TEMPLATE_FILE_ID);
   var template_copy = template_file.makeCopy(template_file.getName() + "(Copy)");
   var document = DocumentApp.openById(template_copy.getId());
@@ -43,7 +64,7 @@ function doProcessInsurance(data) {
   const pdfFolder = getFolderByName_(template_file, INSURANCE_OUTPUT_FOLDER_NAME);  
   // save pdf file
   // save file name pattern : studentId_문서번호
-  var pdfName = data.studentId + '_' + data.문서번호;
+  var pdfName = data.StudentId + '_HealthInsurance';
   var pdf = createPDF(pdfFolder, document.getId(), pdfName);
   template_copy.setTrashed(true);
   //
