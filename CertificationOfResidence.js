@@ -13,9 +13,9 @@ limitations under the License.
 */
 const APP_TITLE = 'CertificationOfResidence';
 // 거주증명서 docs Template File ( 적절하게 변경해야 함. ) 
-const TEMPLATE_FILE_ID = '1GfxiSCucUEGVgffaahLzetvKUIah-M1-XmA4cupd988';
+const TEMPLATE_FILE_ID = '1GfxiSCucUEGVgffaahLzetvKUIah-M1-XmA4cupd988'; // @TODO need to change
 // ArrivalSurvey(응답) SpreadSheet File ( 적절하게 변경해야 함. ) 
-const ARRIVAL_SURVEY_ID = '1un0sKJqgmA_ZbJMwLo9MTHzxFYpPqJBB35qdlKUaWm0';
+const ARRIVAL_SURVEY_ID = '1ZliHOc0nihMy9l6SnLsTpnZ2aA5yAffg41uVN3qbMF8'; // 2023 광토 기숙사 ArrialSurvey Sheet List
 // 생성된 거주 증명서 저장 Folder Name
 const OUTPUT_FOLDER_NAME = 'CertificationOfResitancePdfFolder';
 // 거주 증명서 발급된 Row Background Color 
@@ -58,7 +58,7 @@ function getDataFromFormSubmit(form) {
 function backgroundReset() {
   const lastRow = listsSheet.getLastRow();
   const lastColumn = listsSheet.getLastColumn();
-  listsSheet.getRange("B3:" + ALPHABET[lastColumn -1] + lastRow).setBackground("white");
+  listsSheet.getRange("C3:" + ALPHABET[lastColumn -1] + lastRow).setBackground("white");
 }
 
 function buildCertificationOfResidence(namePart, serialPart, issueDate) {
@@ -68,23 +68,27 @@ function buildCertificationOfResidence(namePart, serialPart, issueDate) {
   const lastLow = listsSheet.getLastRow();
   listsSheet.getRange("D3:T" + lastLow).getValues().forEach((value, index) => {
     if(value[0]) {
+      // 퇴사자
       var range = listsSheet.getRange("A" + (3+index));
       revokeBackground(range);
     }
     else {
-      // 현재 거주중인 학생들 중
-      if(!isCellEmpty(value[8])) {
-        // 건강진단서를 제출한 학생들 중
+      // console.log('buildCertificationOfResidence', value);
+      // 기숙사비를 내고, 건강진단서를 제출한 학생들 중
+      if(value[7] === 'o' && value[8] === 'o') {
+        // 기숙사비를 내고, 건강진단서를 제출한 학생들 중
         if(isCellEmpty(value[16]) || !value[16].startsWith("https://drive.google.com/")) {
           // 아직 발급이 되지 않은 학생들 
           serialPart = buildCertificationOfResidenceBySelect(value[1], namePart, serialPart, issueDate);
         }
         else {
+          console.log('SKIP', value[16] );
           var range = listsSheet.getRange("A" + (3+index));
           revokeBackground(range);
         }
       }
       else {
+        console.log('SKIP', value[7], value[8] );
         var range = listsSheet.getRange("A" + (3+index));
         revokeBackground(range);     
       }
@@ -95,7 +99,7 @@ function buildCertificationOfResidence(namePart, serialPart, issueDate) {
 function revokeBackground(range) {
   var background_color = range.getBackground();
   var row = range.getRow();
-  listsSheet.getRange("B" + row + ":T" + row).setBackground(background_color);   
+  listsSheet.getRange("C" + row + ":T" + row).setBackground(background_color);   
 }
 
 function buildCertificationOfResidenceBySelect(studentId, namePart, serialPart, issueDate) {
@@ -111,12 +115,15 @@ function buildCertificationOfResidenceBySelect(studentId, namePart, serialPart, 
      * - 재훈사감 -
      */
     studentInfo.checkInDate = issueDate;
-    console.log(studentInfo);
+    console.log('studentInfo', studentInfo);
     //
     const surveySheet = SpreadsheetApp.openById(ARRIVAL_SURVEY_ID);
     var config = surveySheet.getSheetByName(CONFIG_SHEET_NAME);
     var dormitoryInfo = getDormitoryInfo(config, studentInfo.roomNumber);
-
+    console.log('dormitoryInfo', dormitoryInfo);
+    if(dormitoryInfo === undefined) {
+      throw new Error(studentInfo.roomNumber + "호의 기숙사 정보를 확인할 수 없습니다.");
+    }
     var data = buildData(studentInfo, dormitoryInfo, issueDate);
     data.문서번호 = namePart + paddedSerialPart;
     /**
@@ -149,7 +156,7 @@ function buildCertificationOfResidenceBySelect(studentId, namePart, serialPart, 
   listsSheet.getRange("E3:E" + lastRow).getValues().forEach((id, index) => {
     if(id == studentId) {
       listsSheet.getRange("T" + (index + 3)).setValue(urlOrError)
-      listsSheet.getRange("B" + (index + 3) + ":T" + (index + 3)).setBackground(BUILD_ROW_BACKGROUND_COLOR);
+      listsSheet.getRange("C" + (index + 3) + ":T" + (index + 3)).setBackground(BUILD_ROW_BACKGROUND_COLOR);
     }
   });
   return serialPart;
@@ -180,21 +187,27 @@ function getStudentInfo(studentId) {
   // 입사 학생 총 수
   const numberOfData = listsSheet.getLastRow();   
   var studentData; 
-  listsSheet.getRange("E3:E" + (3+numberOfData)).getValues().forEach((id, index) => {
+  listsSheet.getRange("E3:E" + numberOfData).getValues().forEach((id, index) => {
     if(id == studentId) {
       studentData = listsSheet.getRange(index + 3, 1, 1, 17).getValues()[0];
     }
   });
 
   if(studentData){
-    if(isCellEmpty(studentData[6])){
+    // 생년월일 Column
+    if(isCellEmpty(studentData[8])){
       throw new Error("생년월일의 값이 설정되어 있어야 합니다.");
     };
-    console.log(studentData);
+    // 납부 Column
+    if(studentData[11] !== 'o') {
+      throw new Error("아직 기숙사비를 내지 않았습니다.");
+    };
+
+    console.log('studentData', studentData);
     return { 
       'studentId':studentData[4], 
       'name':studentData[5], 
-      'birthDay':studentData[6].toISOString().substring(0, 10), // cell format 이 date 로 설정되어 있어야 한다.
+      'birthDay':studentData[8].toISOString().substring(0, 10), // cell format 이 date 로 설정되어 있어야 한다.
       'checkInDate': '',
       'roomNumber':studentData[1],
       'phone': studentData[15],
@@ -207,16 +220,20 @@ function getStudentInfo(studentId) {
 function getDormitoryInfo(dormitoryConfigSheet, roomNumber) {
   var dormitoryData;
   var lastLow = dormitoryConfigSheet.getLastRow();
-  dormitoryConfigSheet.getRange("B2:B" + (1 + lastLow)).getValues().forEach((id, index) => {
+  dormitoryConfigSheet.getRange("B2:B" + lastLow).getValues().forEach((id, index) => {
     if(id == roomNumber) {
-      dormitoryData = dormitoryConfigSheet.getRange(index + 2, 1, 1, 5).getValues()[0];
+      dormitoryData = dormitoryConfigSheet.getRange(index + 2, 1, 1, 6).getValues()[0];
     }
   });
+  console.log('dormitoryData', dormitoryData);
   if(dormitoryData){
+    if(dormitoryData[4] == '' || dormitoryData[5] == '') {
+      throw new Error(roomNumber + "의 주소를 확인할 수 없습니다.");
+    }    
     return { 
       'noomNumber':dormitoryData[1],
-      '주소':dormitoryData[3],
-      'Address':dormitoryData[4] 
+      '주소':dormitoryData[4],
+      'Address':dormitoryData[5] 
       };
   }
   return undefined;  
@@ -351,4 +368,3 @@ function getFolderByName_(templateFile, folderName) {
 function isCellEmpty(cellData) {
   return typeof (cellData) == "string" && cellData == "";
 }
-
