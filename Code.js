@@ -2,6 +2,11 @@ const ws = SpreadsheetApp.getActiveSpreadsheet();
 const listsSheet = ws.getSheetByName("현황");
 const CONFIG_SHEET_NAME = 'Config';
 const configSheet = ws.getSheetByName(CONFIG_SHEET_NAME);
+// 생년월일 Column
+const BIRTH_DAY_COLUMN = 7;
+// CheckOut Column
+const CHECK_OUT_COLUMN = 4;
+
 /** 
  * Creates the menu items for user to run scripts on drop-down.
  */
@@ -47,9 +52,20 @@ function addEmailAddressSheet(emailAddress) {
   emailAddress.forEach((a, index) => emailSheet.getRange(1 + index, lastColumn).setValue(a[3]).setBackground(a[0]));  
 }
 
+// Regular expression to check if string is valid date
+const DATE_PATTERN = /^(\d{4})(-|\/|\. )(0?[1-9]|1[012])(-|\/|\. )(0?[1-9]|[12][0-9]|3[01])$/;
+
 function onEdit(e) {
   const range_modified = e.range;
-  if(range_modified.getColumn() !== 4) {
+  if(range_modified.getColumn() === BIRTH_DAY_COLUMN) {
+    // format check
+    var dateValue = range_modified.getDisplayValue();
+    if(!DATE_PATTERN.test(dateValue)) {
+      range_modified.setValue(dateValue.replaceAll(/\.(\d)/g, ". $1"));
+    }
+    return;
+  };
+  if(range_modified.getColumn() !== CHECK_OUT_COLUMN ) {
     return;
   }
   var row = range_modified.getRow();
