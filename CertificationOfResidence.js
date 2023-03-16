@@ -207,7 +207,7 @@ function getStudentInfo(studentId) {
     return { 
       'studentId':studentData[4], 
       'name':studentData[5], 
-      'birthDay':studentData[8].toISOString().substring(0, 10), // cell format 이 date 로 설정되어 있어야 한다.
+      'birthDay':studentData[(BIRTH_DAY_COLUMN -1)].toISOString().substring(0, 10), // cell format 이 date 로 설정되어 있어야 한다.
       'checkInDate': '',
       'roomNumber':studentData[1],
       'phone': studentData[15],

@@ -37,12 +37,16 @@ function getHealthDataFromFormSubmit(form) {
   // Q : Email address
   listsSheet.getRange("D3:Q" + last_low).getValues().forEach((value, index) => { if(!value[0]) {
     //
-    var studentInfo = getStudentInfo(value[1]);
-    var dormitoryInfo = getDormitoryInfo(config, studentInfo.roomNumber);
-    
-    var data = buildData(studentInfo, dormitoryInfo, issueDate);
-    var pdf_url = doProcessInsurance(data);
-    console.log(pdf_url);
+    var results;
+    try {
+      var studentInfo = getStudentInfo(value[1]);
+      var dormitoryInfo = getDormitoryInfo(config, studentInfo.roomNumber);
+      var data = buildData(studentInfo, dormitoryInfo, issueDate);
+      results = doProcessInsurance(data);
+    }catch(e) {
+      results = e;
+    }    
+    listsSheet.getRange("U" + (3+index)).setValue(results);
   }});
 }
 
