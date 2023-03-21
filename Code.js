@@ -61,7 +61,7 @@ function onEdit(e) {
     // format check
     var dateValue = range_modified.getDisplayValue();
     if(!DATE_PATTERN.test(dateValue)) {
-      range_modified.setValue(dateValue.replaceAll(/\.(\d)/g, ". $1"));
+      range_modified.setValue(dateValue.replaceAll(/\. ?(\d)/g, ". $1"));
     }
     return;
   };
