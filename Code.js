@@ -14,9 +14,6 @@ function onOpen() {
   const ui = SpreadsheetApp.getUi();
   ui.createMenu('Gather Data')
       .addItem('Select EmailAddress', 'selectEmailAddress')
-      .addItem('거주증명서 전체 생성', 'showAllDialog')
-      .addItem('거주증명서 수동 생성', 'showSelectDialog')
-      .addItem('건강보험 고지방법 변경 신청서 출력', 'showHealthInsuranceDialog')
       .addToUi();
 }
 
