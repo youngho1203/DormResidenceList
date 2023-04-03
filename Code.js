@@ -79,3 +79,24 @@ function onEdit(e) {
   // has_extension column
   _extension_cell.setTextStyle(cell_text_style);
 }
+
+/**
+ * 이 빠진 row 를 찾는다.
+ */
+function findEmptyRow(preDefinedArray) {
+  lastRow = listsSheet.getLastRow();
+  listsSheet.getRange("A3:E" + lastRow).getValues().forEach(values, index => {
+    if(isCellEmpty(values[4])) {
+
+    }
+  });
+}
+
+function moveRow(fromRow, toRow) {
+
+}
+
+// Returns true if the cell where cellData was read from is empty.
+function isCellEmpty(cellData) {
+  return typeof (cellData) == "string" && cellData == "";
+}
