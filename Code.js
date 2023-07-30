@@ -1,7 +1,20 @@
+/**
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
 const ws = SpreadsheetApp.getActiveSpreadsheet();
 const listsSheet = ws.getSheetByName("현황");
 // 생년월일 Column
-const BIRTH_DAY_COLUMN = 7;
+const BIRTH_DAY_COLUMN = 9;
 // CheckOut Column
 const CHECK_OUT_COLUMN = 4;
 
@@ -24,7 +37,7 @@ function onEdit(e) {
   var row = range_modified.getRow();
   // has extension column
   // cell text style 이 다른 column 과 다름.
-  var _extension_cell = listsSheet.getRange(row, 14); 
+  var _extension_cell = listsSheet.getRange(row, 15); 
   var cell_text_style = _extension_cell.getTextStyle();
   var lastColumn = listsSheet.getLastColumn();
   var _range = listsSheet.getRange(row, 4, 1, lastColumn);
