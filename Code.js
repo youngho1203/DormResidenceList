@@ -23,6 +23,9 @@ const DATE_PATTERN = /^(\d{4})(-|\/|\. )(0?[1-9]|1[012])(-|\/|\. )(0?[1-9]|[12][
 
 function onEdit(e) {
   const range_modified = e.range;
+  if(range_modified.getSheet().getName() != listsSheet.getName()) {
+    return;
+  }
   if(range_modified.getColumn() === BIRTH_DAY_COLUMN) {
     // format check
     var dateValue = range_modified.getDisplayValue();
