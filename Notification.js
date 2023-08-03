@@ -12,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 const configSheet = ws.getSheetByName("Config");
-const reportSheet = ws.getSheetByName("Report");
+const reportSheet = ws.getSheetByName("Daily Report");
 const historySheet = ws.getSheetByName("Report History");
 const currentListsSheetName = configSheet.getRange("K2").getValue();
 const currentListsSheet = ws.getSheetByName(currentListsSheetName);
@@ -23,7 +23,7 @@ const currentListsSheet = ws.getSheetByName(currentListsSheetName);
 function sendNotification() {
   var lastLow = configSheet.getLastRow();
   configSheet.getRange("A15:G" + lastLow).getValues().forEach(array => {
-    // 순번, reportName, report time, target email list, queryRange, queryCommand, templateName  
+    // 순번, reportName, report time, target email list, queryRange, partialQueryCommand, templateName
     var modifyValue = isModified(array[1]);
     if(modifyValue[0] != 0) {
       sendEmail(array[1], modifyValue, array[3], array[4], array[5], array[6]);
@@ -36,7 +36,7 @@ function sendNotification() {
  * 0 : no change
  * 1 : checkIn change
  * 2 : checkOut change
- * 3 : checkIn, checkOut change
+ * 3 : checkIn, checkOut both change
  */
 function isModified(reportName) {
   var lastValue = getLastValue(reportName).split('|');
@@ -58,32 +58,74 @@ function isModified(reportName) {
 
 /**
  * email 을 보낸다.
+ * @param partialQueryCommand 는 queryCommand 의 앞부분만 가지고 있다.
  */
-function sendEmail(reportName, reportContent, targetEmailList, queryRange, queryCommand, templateName) {
+function sendEmail(reportName, reportContent, targetEmailList, queryRange, partialQueryCommand, templateName) {
   var data = [new Date(), reportName, '', ''];
   try{
     var subject = "[광토기숙사] " + reportName + '가 Update 되었습니다.';
-    var templateFile_1 = HtmlService.createTemplateFromFile("인원 변동 일일 보고 앞부분");
+    var templateFile_1 = HtmlService.createTemplateFromFile(templateName + " 앞부분");
     templateFile_1.date = data[0];
-    templateFile_1.count = "?";
     //
-    var message_1 = templateFile_1.evaluate().getContent(); 
-    var templateFile_2 = HtmlService.createTemplateFromFile("인원 변동 일일 보고 뒷부분");
+    var templateFile_2 = HtmlService.createTemplateFromFile(templateName + " 뒷부분");
     templateFile_2.url = ws.getUrl();
     templateFile_2.gid = reportSheet.getSheetId();
-    var message_2 = templateFile_2.evaluate().getContent();
 
-    var message =    new Renderer(ws, reportName, reportContent, queryRange, queryCommand).render().toString();
+    //
+    var htmlMessage = new StringBuilder();
+    htmlMessage.append(templateFile_1.evaluate().getContent());
     
-    message = message_1 + message + message_2;
-    // The code below will send an email with the current date and time.
+    var checkInQueryCommand = partialQueryCommand + " D=False AND R = date '" + data[0].toISOString().substring(0, 10) + "'";
+    var checkOutQueryCommand = partialQueryCommand + " D=True AND S = date '" + data[0].toISOString().substring(0, 10) + "'";
+    //
+    if(reportContent[0] == 1) {
+      // checkIn Only
+      var checkInRenderer = new Renderer(ws, reportName, queryRange, checkInQueryCommand); 
+      var checkInMessage = checkInRenderer.render();
+      htmlMessage.append("<div class='sub-title'>");
+      htmlMessage.append("신규 입사생 수 : [");
+      htmlMessage.append(checkInRenderer.rowCount);
+      htmlMessage.append("]</div>");
+      htmlMessage.append(checkInMessage);
+    }
+    else if(reportContent[0] == 2) {
+      // checkOut Only
+      var checkOutRenderer = new Renderer(ws, reportName, queryRange, checkOutQueryCommand);
+      var checkOutMessage = checkOutRenderer.render();
+      htmlMessage.append("<div class='sub-title'>");
+      htmlMessage.append("신규 퇴사생 수 : [");
+      htmlMessage.append(checkOutRenderer.rowCount);      
+      htmlMessage.append("]</div>");      
+      htmlMessage.append(checkOutMessage);      
+    }
+    else {
+      // checkIn, CheckOut both
+      var checkInRenderer = new Renderer(ws, reportName, queryRange, checkInQueryCommand);   
+      var checkOutRenderer = new Renderer(ws, reportName, queryRange, checkOutQueryCommand);
+ 
+      var checkInMessage = checkInRenderer.render();
+      // add checkIn Title
+      htmlMessage.append("<div class='sub-title'>");
+      htmlMessage.append("신규 입사생 수 : [");
+      htmlMessage.append(checkInRenderer.rowCount);
+      htmlMessage.append("]</div>");
+      htmlMessage.append(checkInMessage);
+      // add CheckOut Title
+      var checkOutMessage = checkOutRenderer.render();
+      htmlMessage.append("<div class='sub-title'>");
+      htmlMessage.append("신규 퇴사생 수 : [");
+      htmlMessage.append(checkOutRenderer.rowCount);      
+      htmlMessage.append("]</div>");      
+      htmlMessage.append(checkOutMessage);
+    }
+    //
+    htmlMessage.append(templateFile_2.evaluate().getContent());
+    //
     targetEmailList.split(',').forEach(address => {
-      GmailApp.sendEmail(address, subject, '', { htmlBody: message });
+      GmailApp.sendEmail(address, subject, '', { htmlBody: htmlMessage.toString() });
     });
     data[2] = reportContent.slice(1).join('|');
     data[3] = 'SENT'
-
-    // test_getSheetsQueryResult();
   }
   catch(ex) {
     console.log(ex);

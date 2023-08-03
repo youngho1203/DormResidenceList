@@ -17,6 +17,43 @@ limitations under the License.
 <html>
   <head>
     <base target="_top">
+    <style>
+    .title {
+      font: normal 16px Roboto, sans-serif;
+      margin: 10px 0;
+    }
+    .sub-title {
+      font: normal 14px Roboto, sans-serif;
+      margin: 10px 0 6px 0;
+    }    
+    .gmail-table {
+      border: solid 2px #DDEEEE;
+      border-collapse: collapse;
+      border-spacing: 0;
+      font: normal 14px Roboto, sans-serif;
+    }
+    .gmail-table thead th {
+      background-color: #DDEFEF;
+      border: solid 1px #DDEEEE;
+      color: #336B6B;
+      padding: 10px;
+      text-align: left;
+      text-shadow: 1px 1px 1px #fff;
+    }
+    .gmail-table tbody td {
+      border: solid 1px #DDEEEE;
+      color: #333;
+      padding: 10px;
+      text-shadow: 1px 1px 1px #fff;
+    }
+    .info {
+      font: normal 14px Roboto, sans-serif;
+      margin: 20px 0 10px 0;
+    }
+    .student-name {
+      width: 310px;
+    }
+  </style>  
   </head>
   <body>
-    <p> [광토 기숙사(교환학생, 외국인 학생)] <?= date.toISOString().substring(0, 10) ?> 인원 변동 일일 보고</p>
+    <div class='title'> [광토 기숙사(교환학생, 외국인 학생)] <?= date.toISOString().substring(0, 10) ?> 인원 변동 일일 보고</div>
