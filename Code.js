@@ -48,6 +48,7 @@ function onEdit(e) {
   var text_color = range_modified.getValue() ? "#980000" : "black";
   var style_builder = _range.getTextStyle().copy().setUnderline(false).setForegroundColor(text_color).setFontFamily(font_family);
   _range.setTextStyle(style_builder.setStrikethrough(range_modified.getValue()).build());
+  
   // has_extension column
   _extension_cell.setTextStyle(cell_text_style);
 }

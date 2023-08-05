@@ -11,11 +11,11 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-function Renderer(activeSheet, reportName, range, queryCommand) {
-  this.activeSheet = activeSheet;
+function Renderer(reportName, range, queryCommand, columnTitle) {
   this.reportName = reportName;
   this.range = range;
   this.queryCommand = queryCommand;
+  this.columnTitle = columnTitle;
   this.columnCount =0;
   this.rowCount = 0;
 }
@@ -28,11 +28,26 @@ Renderer.prototype.render = function() {
   var data = this.gather();
   var sb = new StringBuilder();
   sb.append("<table class='gmail-table'>");
+  sb.append("<thead>");
+  sb.append("<tr>");
+  this.columnTitle.forEach((title, index) => {
+    sb.append("<th class='");
+    sb.append("col");
+    sb.append((index + 1));
+    sb.append("'>")
+    sb.append(title);
+    sb.append("</th>");
+  });
+  sb.append("</thead>");
   sb.append("<tbody>");
+  sb.append("</tr>");
   data.forEach(row => {
     sb.append("<tr>");
-    row.forEach(col => { 
-      sb.append("<td>");
+    row.forEach((col, index) => {
+      sb.append("<td class='");
+      sb.append("col");
+      sb.append((index + 1));
+      sb.append("'>");
       sb.append(col);
       sb.append("</td>");
     });

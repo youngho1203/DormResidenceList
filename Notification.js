@@ -63,64 +63,38 @@ function isModified(reportName) {
 function sendEmail(reportName, reportContent, targetEmailList, queryRange, partialQueryCommand, templateName) {
   var data = [new Date(), reportName, '', ''];
   try{
-    var subject = "[광토기숙사] " + reportName + '가 Update 되었습니다.';
+    //
     var templateFile_1 = HtmlService.createTemplateFromFile(templateName + " 앞부분");
     templateFile_1.date = data[0];
     //
     var templateFile_2 = HtmlService.createTemplateFromFile(templateName + " 뒷부분");
     templateFile_2.url = ws.getUrl();
     templateFile_2.gid = reportSheet.getSheetId();
-
     //
     var htmlMessage = new StringBuilder();
     htmlMessage.append(templateFile_1.evaluate().getContent());
     
+    var title = getTitle(partialQueryCommand);
     var checkInQueryCommand = partialQueryCommand + " D=False AND R = date '" + data[0].toISOString().substring(0, 10) + "'";
     var checkOutQueryCommand = partialQueryCommand + " D=True AND S = date '" + data[0].toISOString().substring(0, 10) + "'";
     //
     if(reportContent[0] == 1) {
       // checkIn Only
-      var checkInRenderer = new Renderer(ws, reportName, queryRange, checkInQueryCommand); 
-      var checkInMessage = checkInRenderer.render();
-      htmlMessage.append("<div class='sub-title'>");
-      htmlMessage.append("신규 입사생 수 : [");
-      htmlMessage.append(checkInRenderer.rowCount);
-      htmlMessage.append("]</div>");
-      htmlMessage.append(checkInMessage);
+      _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, "신규 입사생 수");
     }
     else if(reportContent[0] == 2) {
-      // checkOut Only
-      var checkOutRenderer = new Renderer(ws, reportName, queryRange, checkOutQueryCommand);
-      var checkOutMessage = checkOutRenderer.render();
-      htmlMessage.append("<div class='sub-title'>");
-      htmlMessage.append("신규 퇴사생 수 : [");
-      htmlMessage.append(checkOutRenderer.rowCount);      
-      htmlMessage.append("]</div>");      
-      htmlMessage.append(checkOutMessage);      
+      // checkOut Only  
+      _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, "신규 퇴사생 수");  
     }
     else {
       // checkIn, CheckOut both
-      var checkInRenderer = new Renderer(ws, reportName, queryRange, checkInQueryCommand);   
-      var checkOutRenderer = new Renderer(ws, reportName, queryRange, checkOutQueryCommand);
- 
-      var checkInMessage = checkInRenderer.render();
-      // add checkIn Title
-      htmlMessage.append("<div class='sub-title'>");
-      htmlMessage.append("신규 입사생 수 : [");
-      htmlMessage.append(checkInRenderer.rowCount);
-      htmlMessage.append("]</div>");
-      htmlMessage.append(checkInMessage);
-      // add CheckOut Title
-      var checkOutMessage = checkOutRenderer.render();
-      htmlMessage.append("<div class='sub-title'>");
-      htmlMessage.append("신규 퇴사생 수 : [");
-      htmlMessage.append(checkOutRenderer.rowCount);      
-      htmlMessage.append("]</div>");      
-      htmlMessage.append(checkOutMessage);
+      _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, "신규 입사생 수");
+      _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, "신규 퇴사생 수");
     }
     //
     htmlMessage.append(templateFile_2.evaluate().getContent());
     //
+    var subject = "[광토기숙사] " + reportName + '가 Update 되었습니다.';
     targetEmailList.split(',').forEach(address => {
       GmailApp.sendEmail(address, subject, '', { htmlBody: htmlMessage.toString() });
     });
@@ -137,7 +111,22 @@ function sendEmail(reportName, reportContent, targetEmailList, queryRange, parti
 }
 
 /**
+ *
+ */
+function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, reportTitle) {
+  var renderer = new Renderer(reportName, queryRange, queryCommand, title); 
+  var checkInMessage = renderer.render();
+  htmlMessage.append("<div class='sub-title'>");
+  htmlMessage.append(reportTitle);
+  htmlMessage.append(" : [ ");
+  htmlMessage.append(renderer.rowCount);
+  htmlMessage.append(" ]</div>");
+  htmlMessage.append(checkInMessage);
+}
+
+/**
  * 변화가 있는지 확인하기 위한 문자열
+ * @todo 로직에 bug 가 있다. need to fix it
  */
 function getCurrentValue() {
   let lastLow = currentListsSheet.getLastRow();
@@ -150,12 +139,20 @@ function getCurrentValue() {
  * report 이전 상태 값을 구한다.
  */
 function getLastValue(reportName) {
-  var lastValue;
+  var lastValue ='0|0';
   let lastLow = historySheet.getLastRow();
   historySheet.getRange("B2:C" + lastLow).getValues().filter(array => array[0] == reportName).forEach(array => {
     lastValue = array[1];
   });
   return lastValue;
+}
+
+function getTitle(partialQueryCommand) {
+  // SELECT xxxx WHERE statement
+  let cols = partialQueryCommand.substring(7, partialQueryCommand.indexOf("WHERE")).split(",");
+  // 2열 이 제목이다.
+  let rangeList = cols.map(c => (c.trim() + 2));
+  return currentListsSheet.getRangeList(rangeList).getRanges().map(r => r.getValue());
 }
 
 /**

@@ -34,26 +34,40 @@ limitations under the License.
     }
     .gmail-table thead th {
       background-color: #DDEFEF;
-      border: solid 1px #DDEEEE;
+      border: solid 1px black; // #DDEEEE;
       color: #336B6B;
-      padding: 10px;
-      text-align: left;
+      padding: 4px;
+      text-align: center;
       text-shadow: 1px 1px 1px #fff;
     }
     .gmail-table tbody td {
       border: solid 1px #DDEEEE;
       color: #333;
       padding: 10px;
+      text-align: center;
       text-shadow: 1px 1px 1px #fff;
     }
     .info {
       font: normal 14px Roboto, sans-serif;
       margin: 20px 0 10px 0;
     }
-    .student-name {
-      width: 310px;
+    .col1 { /*호실*/
+      width: 66px;
     }
-  </style>  
+    .col2 { /*구분*/
+      width: 44px;
+    }
+    .col3 { /*학번*/
+      width: 100px;
+    }
+    .col4 { /*이름*/
+      width: 300px;
+    }
+    .gmail-table tbody td.col4 { /*이름*/
+      text-align: left;
+      width: 300px;
+    }    
+    </style>  
   </head>
   <body>
     <div class='title'> [광토 기숙사(교환학생, 외국인 학생)] <?= date.toISOString().substring(0, 10) ?> 인원 변동 일일 보고</div>
