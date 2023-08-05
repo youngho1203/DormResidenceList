@@ -21,6 +21,8 @@ const currentListsSheet = ws.getSheetByName(currentListsSheetName);
  * 주기적으로 check out report 를 email 로 보낸다.
  */
 function sendNotification() {
+  // simple trick to set Date
+  reportSheet.getRange("A1").setValue(new Date().toISOString().substring(0, 10));
   var lastLow = configSheet.getLastRow();
   configSheet.getRange("A15:G" + lastLow).getValues().forEach(array => {
     // 순번, reportName, report time, target email list, queryRange, partialQueryCommand, templateName
