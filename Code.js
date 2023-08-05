@@ -13,41 +13,39 @@ limitations under the License.
 */
 const ws = SpreadsheetApp.getActiveSpreadsheet();
 const listsSheet = ws.getSheetByName("현황");
-// 생년월일 Column
-const BIRTH_DAY_COLUMN = 9;
-// CheckOut Column
-const CHECK_OUT_COLUMN = 4;
-
-// Regular expression to check if string is valid date
-const DATE_PATTERN = /^(\d{4})(-|\/|\. )(0?[1-9]|1[012])(-|\/|\. )(0?[1-9]|[12][0-9]|3[01])$/;
+const configSheet = ws.getSheetByName("Config");
+// lastColumn
+const LAST_COLUMN = listsSheet.getLastColumn();
+// CheckOut Column 4 ('D')
+const CHECK_OUT_COLUMN = configSheet.getRange("A12").getValue();
+// Extension Column 15 ('O')
+const EXTENSION_COLUMN = configSheet.getRange("B12").getValue();
 
 function onEdit(e) {
+  if(!e){
+    return;
+  }
   const range_modified = e.range;
   if(range_modified.getSheet().getName() != listsSheet.getName()) {
     return;
   }
-  if(range_modified.getColumn() === BIRTH_DAY_COLUMN) {
-    // format check
-    var dateValue = range_modified.getDisplayValue();
-    if(!DATE_PATTERN.test(dateValue)) {
-      range_modified.setValue(dateValue.replaceAll(/\. ?(\d)/g, ". $1"));
-    }
-    return;
-  };
   if(range_modified.getColumn() !== CHECK_OUT_COLUMN ) {
     return;
   }
-  var row = range_modified.getRow();
+  // change style
+  changeStyleForCheckOut(range_modified);
+}
+
+function changeStyleForCheckOut(range) {
   // has extension column
   // cell text style 이 다른 column 과 다름.
-  var _extension_cell = listsSheet.getRange(row, 15); 
+  var _extension_cell = listsSheet.getRange(range.getRow(), EXTENSION_COLUMN); 
   var cell_text_style = _extension_cell.getTextStyle();
-  var lastColumn = listsSheet.getLastColumn();
-  var _range = listsSheet.getRange(row, 4, 1, lastColumn);
-  var font_family = range_modified.getFontFamily();
-  var text_color = range_modified.getValue() ? "#980000" : "black";
+  var _range = range.offset(0,0,1, (LAST_COLUMN - 4));
+  var font_family = range.getFontFamily();
+  var text_color = range.getValue() ? "#980000" : "black";
   var style_builder = _range.getTextStyle().copy().setUnderline(false).setForegroundColor(text_color).setFontFamily(font_family);
-  _range.setTextStyle(style_builder.setStrikethrough(range_modified.getValue()).build());
+  _range.setTextStyle(style_builder.setStrikethrough(range.getValue()).build());
   
   // has_extension column
   _extension_cell.setTextStyle(cell_text_style);
