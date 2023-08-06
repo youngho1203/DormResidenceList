@@ -127,12 +127,11 @@ function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, rep
 
 /**
  * 변화가 있는지 확인하기 위한 문자열
- * @todo 로직에 bug 가 있다. need to fix it
  */
 function getCurrentValue() {
   let lastLow = currentListsSheet.getLastRow();
-  var checkIn = currentListsSheet.getRange("D3:E" + lastLow).getValues().filter(a => a[1] != '').map((a,index) => { return (a[0] ? index : a[0]) }).toString();  
-  var checkOut = currentListsSheet.getRange("D3:E" + lastLow).getValues().filter(a => a[1] != '').map((a,index) => { return (a[0] ? a[0] : index) }).toString();  
+  var checkIn = currentListsSheet.getRange("E3:R" + lastLow).getValues().filter(a => a[0] != '').filter(a => a[13] != '').map(a => { return a[13].toISOString().substring(0,10) }).toString();  
+  var checkOut = currentListsSheet.getRange("E3:S" + lastLow).getValues().filter(a => a[0] != '').filter(a => a[14] != '').map(a => { return a[14].toISOString().substring(0,10) }).toString();
   return hash(checkIn) + '|' + hash(checkOut);
 }
 
