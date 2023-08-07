@@ -118,10 +118,11 @@ function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, rep
   var renderer = new Renderer(reportName, queryRange, queryCommand, title); 
   var checkInMessage = renderer.render();
   htmlMessage.append("<div class='sub-title'>");
+  htmlMessage.append("• ");
   htmlMessage.append(reportTitle);
   htmlMessage.append(" : [ ");
   htmlMessage.append(renderer.rowCount);
-  htmlMessage.append(" ]</div>");
+  htmlMessage.append(" ]</ul></div>");
   htmlMessage.append(checkInMessage);
 }
 
