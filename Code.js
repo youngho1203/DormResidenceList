@@ -29,6 +29,12 @@ function onEdit(e) {
   if(range_modified.getSheet().getName() != listsSheet.getName()) {
     return;
   }
+  if(range_modified.getColumn() == 11){
+    // 납부
+    let value = range_modified.getValue() == 'o' ? new Date().toISOString().substring(0,10) : '';
+    range_modified.offset(0,7,1,1).setValue(value);
+    return;
+  }
   if(range_modified.getColumn() !== CHECK_OUT_COLUMN ) {
     return;
   }
