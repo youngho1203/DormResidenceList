@@ -67,24 +67,24 @@ Renderer.prototype.gather = function() {
   var request = url + '/gviz/tq?gid=' + sheetId + '&range=' + this.range + '&tq=' + encodeURIComponent(this.queryCommand);  
   var request_result = UrlFetchApp.fetch(request).getContentText();    
   // get json object
-  var from = request_result.indexOf("{");
-  var to   = request_result.lastIndexOf("}")+1;  
-  var jsonText = request_result.slice(from, to);
+  var _from = request_result.indexOf("{");
+  var _to   = request_result.lastIndexOf("}")+1;  
+  var jsonText = request_result.slice(_from, _to);
   var parsedObject = JSON.parse(jsonText);
   this.columnCount = parsedObject.table.cols.length;
   var result = [];
   parsedObject.table.rows.forEach(row => {
     var rowValue = row.c;
-    var row = [];
+    var _row = [];
     for(var k=0; k<this.columnCount; k++) {
       if(!rowValue[k]) {
-        row.push('');
+        _row.push('');
       }
       else {
-        row.push(rowValue[k].v);
+        _row.push(rowValue[k].v);
       }
     }
-    result.push(row);
+    result.push(_row);
   });
   this.rowCount = result.length;
   

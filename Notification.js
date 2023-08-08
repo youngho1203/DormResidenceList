@@ -22,12 +22,13 @@ const currentListsSheet = ws.getSheetByName(currentListsSheetName);
 function sendNotification() {
   // simple trick to set Date
   reportSheet.getRange("A1").setValue(new Date().toISOString().substring(0, 10));
+  var numberOfresidence = currentListsSheet.getRange("F1:J1").getValues()[0];
   var lastLow = configSheet.getLastRow();
   configSheet.getRange("A15:G" + lastLow).getValues().forEach(array => {
     // 순번, reportName, report time, target email list, queryRange, partialQueryCommand, templateName
     var modifyValue = isModified(array[1]);
     if(modifyValue[0] != 0) {
-      sendEmail(array[1], modifyValue, array[3], array[4], array[5], array[6]);
+      sendEmail(array[1], modifyValue, array[3], array[4], array[5], array[6], numberOfresidence);
     }
   });
 }
@@ -61,12 +62,13 @@ function isModified(reportName) {
  * email 을 보낸다.
  * @param partialQueryCommand 는 queryCommand 의 앞부분만 가지고 있다.
  */
-function sendEmail(reportName, reportContent, targetEmailList, queryRange, partialQueryCommand, templateName) {
+function sendEmail(reportName, reportContent, targetEmailList, queryRange, partialQueryCommand, templateName, numberOfresidence) {
   var data = [new Date(), reportName, '', ''];
   try{
     //
     var templateFile_1 = HtmlService.createTemplateFromFile(templateName + " 앞부분");
     templateFile_1.date = data[0];
+    templateFile_1.numberOfresidence = numberOfresidence;
     //
     var templateFile_2 = HtmlService.createTemplateFromFile(templateName + " 뒷부분");
     templateFile_2.url = ws.getUrl();
@@ -122,7 +124,7 @@ function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, rep
   htmlMessage.append(reportTitle);
   htmlMessage.append(" : [ ");
   htmlMessage.append(renderer.rowCount);
-  htmlMessage.append(" ]</ul></div>");
+  htmlMessage.append(" ]</div>");
   htmlMessage.append(checkInMessage);
 }
 
