@@ -20,15 +20,16 @@ const currentListsSheet = ws.getSheetByName(currentListsSheetName);
  * 주기적으로 check out report 를 email 로 보낸다.
  */
 function sendNotification() {
+  var now = new Date();
   // simple trick to set Date
-  reportSheet.getRange("A1").setValue(new Date().toISOString().substring(0, 10));
+  reportSheet.getRange("A1").setValue(now.toISOString().substring(0, 10));
   var numberOfresidence = currentListsSheet.getRange("F1:J1").getValues()[0];
   var lastLow = configSheet.getLastRow();
   configSheet.getRange("A15:G" + lastLow).getValues().forEach(array => {
     // 순번, reportName, report time, target email list, queryRange, partialQueryCommand, templateName
     var modifyValue = isModified(array[1]);
     if(modifyValue[0] != 0) {
-      sendEmail(array[1], modifyValue, array[3], array[4], array[5], array[6], numberOfresidence);
+      sendEmail(now, array[1], modifyValue, array[3], array[4], array[5], array[6], numberOfresidence);
     }
   });
 }
@@ -62,8 +63,8 @@ function isModified(reportName) {
  * email 을 보낸다.
  * @param partialQueryCommand 는 queryCommand 의 앞부분만 가지고 있다.
  */
-function sendEmail(reportName, reportContent, targetEmailList, queryRange, partialQueryCommand, templateName, numberOfresidence) {
-  var data = [new Date(), reportName, '', ''];
+function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, partialQueryCommand, templateName, numberOfresidence) {
+  var data = [now, reportName, '', ''];
   try{
     //
     var templateFile_1 = HtmlService.createTemplateFromFile(templateName + " 앞부분");
@@ -119,7 +120,7 @@ function sendEmail(reportName, reportContent, targetEmailList, queryRange, parti
 function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, reportTitle) {
   var renderer = new Renderer(reportName, queryRange, queryCommand, title); 
   var checkInMessage = renderer.render();
-  htmlMessage.append("<div class='sub-title'>");
+  htmlMessage.append("<div class='sub-title' style='font: normal 14px Roboto, sans-serif; margin: 10px 0 6px 0;'>");
   htmlMessage.append("• ");
   htmlMessage.append(reportTitle);
   htmlMessage.append(" : [ ");

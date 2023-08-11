@@ -27,14 +27,14 @@ function Renderer(reportName, range, queryCommand, columnTitle) {
 Renderer.prototype.render = function() {
   var data = this.gather();
   var sb = new StringBuilder();
-  sb.append("<table class='gmail-table'>");
+  sb.append("<table class='gmail-table' style='border: solid 2px #DDEEEE; border-collapse: collapse; border-spacing: 0; font: normal 14px Roboto sans-serif; margin: 10px 0 0 60px;'>");
   sb.append("<thead>");
   sb.append("<tr>");
   this.columnTitle.forEach((title, index) => {
     sb.append("<th class='");
     sb.append("col");
     sb.append((index + 1));
-    sb.append("'>")
+    sb.append("' style='background-color: #DDEFEF; border: solid 1px black; color: #336B6B; padding: 4px; text-align: center; text-shadow: 1px 1px 1px #fff;'>");
     sb.append(title);
     sb.append("</th>");
   });
@@ -47,7 +47,7 @@ Renderer.prototype.render = function() {
       sb.append("<td class='");
       sb.append("col");
       sb.append((index + 1));
-      sb.append("'>");
+      sb.append("' style='border: solid 1px #DDEEEE; color: #333; padding: 4px; text-align: center; text-shadow: 1px 1px 1px #fff;'>");
       sb.append(col);
       sb.append("</td>");
     });
