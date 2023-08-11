@@ -12,7 +12,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 const ws = SpreadsheetApp.getActiveSpreadsheet();
-const listsSheet = ws.getSheetByName("현황");
+const listsSheet = ws.getActiveSheet();
 const configSheet = ws.getSheetByName("Config");
 // lastColumn
 const LAST_COLUMN = listsSheet.getLastColumn();
