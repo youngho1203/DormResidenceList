@@ -77,10 +77,11 @@ function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, 
     //
     var htmlMessage = new StringBuilder();
     htmlMessage.append(templateFile_1.evaluate().getContent());
-    
+    //
+    var dateString = _getISOTimeZoneCorrectedDateString(date[0]);    
     var title = getTitle(partialQueryCommand);
-    var checkInQueryCommand = partialQueryCommand + " D=False AND R = date '" + data[0].toISOString().substring(0, 10) + "'";
-    var checkOutQueryCommand = partialQueryCommand + " D=True AND S = date '" + data[0].toISOString().substring(0, 10) + "'";
+    var checkInQueryCommand = partialQueryCommand + " D=False AND R = date '" + dateString + "'";
+    var checkOutQueryCommand = partialQueryCommand + " D=True AND S = date '" + dateString + "'";
     //
     if(reportContent[0] == 1) {
       // checkIn Only
@@ -112,6 +113,18 @@ function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, 
   }
   // 
   historySheet.appendRow(data);
+}
+
+/**
+ * javascript toISOString timezone problem fixed
+ */
+function _getISOTimeZoneCorrectedDateString(date) {
+  // timezone offset 처리 
+  // @see https://stackoverflow.com/questions/17415579/how-to-iso-8601-format-a-date-with-timezone-offset-in-javascript  
+  var tzoffset = date.getTimezoneOffset() * 60000; //offset in milliseconds
+  var localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
+  // console.log(localISOTime)  // => '2015-01-26T06:40:36.181'
+  return localISOTime.substring(0, 10);
 }
 
 /**
