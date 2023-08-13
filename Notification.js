@@ -22,7 +22,7 @@ const currentListsSheet = ws.getSheetByName(currentListsSheetName);
 function sendNotification() {
   var now = new Date();
   // simple trick to set Date
-  reportSheet.getRange("A1").setValue(now.toISOString().substring(0, 10));
+  reportSheet.getRange("A1").setValue(now);
   var numberOfresidence = currentListsSheet.getRange("F1:J1").getValues()[0];
   var lastLow = configSheet.getLastRow();
   configSheet.getRange("A15:G" + lastLow).getValues().forEach(array => {
