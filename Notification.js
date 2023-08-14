@@ -13,8 +13,11 @@ limitations under the License.
 */
 const reportSheet = ws.getSheetByName("Daily Report");
 const historySheet = ws.getSheetByName("Report History");
-const currentListsSheetName = configSheet.getRange("K2").getValue();
-const currentListsSheet = ws.getSheetByName(currentListsSheetName);
+// checkIn, checkOut sheet split
+const checkInSheetName = configSheet.getRange("J2").getValue();
+const checkInListsSheet = ws.getSheetByName(checkInSheetName);
+const checkOutSheetName = configSheet.getRange("K2").getValue();
+const checkOutListsSheet = ws.getSheetByName(checkOutSheetName);
 
 /**
  * 주기적으로 check out report 를 email 로 보낸다.
@@ -23,7 +26,8 @@ function sendNotification() {
   var now = new Date();
   // simple trick to set Date
   reportSheet.getRange("A1").setValue(now);
-  var numberOfresidence = currentListsSheet.getRange("F1:J1").getValues()[0];
+  // @todo checkIn, checkOut sheet 를 분리함에 따라서, 보다 복잡해졌다.
+  var numberOfresidence = getNumberOfCurrentResident();
   var lastLow = configSheet.getLastRow();
   configSheet.getRange("A15:G" + lastLow).getValues().forEach(array => {
     // 순번, reportName, report time, target email list, queryRange, partialQueryCommand, templateName
@@ -32,6 +36,14 @@ function sendNotification() {
       sendEmail(now, array[1], modifyValue, array[3], array[4], array[5], array[6], numberOfresidence);
     }
   });
+}
+
+/**
+ * CheckIn, CheckOut sheet 를 분리함에 따라서 복잡해졌다. 
+ */
+function getNumberOfCurrentResident() {
+  // @todo checkIn, checkOut sheet 분리 적용 implement
+  return checkInListsSheet.getRange("F1:J1").getValues()[0];
 }
 
 /**
@@ -78,28 +90,28 @@ function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, 
     var htmlMessage = new StringBuilder();
     htmlMessage.append(templateFile_1.evaluate().getContent());
     //
-    var dateString = _getISOTimeZoneCorrectedDateString(date[0]);    
+    var dateString = _getISOTimeZoneCorrectedDateString(data[0]);    
     var title = getTitle(partialQueryCommand);
     var checkInQueryCommand = partialQueryCommand + " D=False AND R = date '" + dateString + "'";
     var checkOutQueryCommand = partialQueryCommand + " D=True AND S = date '" + dateString + "'";
     //
     if(reportContent[0] == 1) {
       // checkIn Only
-      _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, "신규 입사생 수");
+      _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, "신규 입사생 수", true);
     }
     else if(reportContent[0] == 2) {
       // checkOut Only  
-      _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, "신규 퇴사생 수");  
+      _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, "신규 퇴사생 수", false);  
     }
     else {
       // checkIn, CheckOut both
-      _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, "신규 입사생 수");
-      _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, "신규 퇴사생 수");
+      _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, "신규 입사생 수", true);
+      _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, "신규 퇴사생 수", false);
     }
     //
     htmlMessage.append(templateFile_2.evaluate().getContent());
     //
-    var subject = "[광토기숙사] " + reportName + '가 Update 되었습니다.';
+    var subject = "DEV [광토기숙사] " + reportName + '가 Update 되었습니다.';
     targetEmailList.split(',').forEach(address => {
       GmailApp.sendEmail(address, subject, '', { htmlBody: htmlMessage.toString() });
     });
@@ -113,18 +125,6 @@ function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, 
   }
   // 
   historySheet.appendRow(data);
-}
-
-/**
- * javascript toISOString timezone problem fixed
- */
-function _getISOTimeZoneCorrectedDateString(date) {
-  // timezone offset 처리 
-  // @see https://stackoverflow.com/questions/17415579/how-to-iso-8601-format-a-date-with-timezone-offset-in-javascript  
-  var tzoffset = date.getTimezoneOffset() * 60000; //offset in milliseconds
-  var localISOTime = (new Date(Date.now() - tzoffset)).toISOString().slice(0, -1);
-  // console.log(localISOTime)  // => '2015-01-26T06:40:36.181'
-  return localISOTime.substring(0, 10);
 }
 
 /**
@@ -146,9 +146,10 @@ function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, rep
  * 변화가 있는지 확인하기 위한 문자열
  */
 function getCurrentValue() {
-  let lastLow = currentListsSheet.getLastRow();
-  var checkIn = currentListsSheet.getRange("E3:R" + lastLow).getValues().filter(a => a[0] != '').filter(a => a[13] != '').map(a => { return a[13].toISOString().substring(0,10) }).toString();  
-  var checkOut = currentListsSheet.getRange("E3:S" + lastLow).getValues().filter(a => a[0] != '').filter(a => a[14] != '').map(a => { return a[14].toISOString().substring(0,10) }).toString();
+  var lastLow = checkInListsSheet.getLastRow();
+  var checkIn = checkInListsSheet.getRange("E3:R" + lastLow).getValues().filter(a => a[0] != '').filter(a => a[13] != '').map(a => { return _getISOTimeZoneCorrectedDateString(a[13])}).toString();
+  lastLow = checkOutListsSheet.getLastRow();
+  var checkOut = checkOutListsSheet.getRange("E3:S" + lastLow).getValues().filter(a => a[0] != '').filter(a => a[14] != '').map(a => { return _getISOTimeZoneCorrectedDateString(a[14])}).toString();
   return hash(checkIn) + '|' + hash(checkOut);
 }
 
@@ -164,12 +165,16 @@ function getLastValue(reportName) {
   return lastValue;
 }
 
+/**
+ * table th 이름을 가지고 온다.
+ * CheckIn, CheckOut sheet 가 동일하여야 한다.
+ */
 function getTitle(partialQueryCommand) {
   // SELECT xxxx WHERE statement
   let cols = partialQueryCommand.substring(7, partialQueryCommand.indexOf("WHERE")).split(",");
   // 2열 이 제목이다.
   let rangeList = cols.map(c => (c.trim() + 2));
-  return currentListsSheet.getRangeList(rangeList).getRanges().map(r => r.getValue());
+  return checkInListsSheet.getRangeList(rangeList).getRanges().map(r => r.getValue());
 }
 
 /**

@@ -11,13 +11,14 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-function Renderer(reportName, range, queryCommand, columnTitle) {
+function Renderer(reportName, range, queryCommand, columnTitle, isCheckIn) {
   this.reportName = reportName;
   this.range = range;
   this.queryCommand = queryCommand;
   this.columnTitle = columnTitle;
   this.columnCount =0;
   this.rowCount = 0;
+  this.isCheckIn = isCheckIn;
 }
 
 /**
@@ -27,7 +28,7 @@ function Renderer(reportName, range, queryCommand, columnTitle) {
 Renderer.prototype.render = function() {
   var data = this.gather();
   var sb = new StringBuilder();
-  sb.append("<table class='gmail-table' style='border: solid 2px #DDEEEE; border-collapse: collapse; border-spacing: 0; font: normal 14px Roboto sans-serif; margin: 10px 0 0 60px;'>");
+  sb.append("<table class='gmail-table' style='border: solid 2px #DDEEEE; border-collapse: collapse; border-spacing: 0; font: normal 14px Roboto sans-serif; margin: 10px 0 0 60px; width: 60%;'>");
   sb.append("<thead>");
   sb.append("<tr>");
   this.columnTitle.forEach((title, index) => {
@@ -62,10 +63,10 @@ Renderer.prototype.render = function() {
  * rendering 을 위한 data 를 만든다.
  */
 Renderer.prototype.gather = function() {
-  var sheetId =currentListsSheet.getSheetId();
+  var sheetId = this.isCheckIn ? checkInListsSheet.getSheetId() : checkOutListsSheet.getSheetId();
   var url = ws.getUrl().replace("/edit", "");
-  var request = url + '/gviz/tq?gid=' + sheetId + '&range=' + this.range + '&tq=' + encodeURIComponent(this.queryCommand);  
-  var request_result = UrlFetchApp.fetch(request).getContentText();    
+  var request = url + '/gviz/tq?gid=' + sheetId + '&range=' + this.range + '&tq=' + encodeURIComponent(this.queryCommand);
+  var request_result = UrlFetchApp.fetch(request).getContentText();   
   // get json object
   var _from = request_result.indexOf("{");
   var _to   = request_result.lastIndexOf("}")+1;  

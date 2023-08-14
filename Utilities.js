@@ -1,4 +1,3 @@
-<!--
 /**
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -12,10 +11,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-//-->
-    </div>
-    <div class="info" style="font: normal 14px Roboto, sans-serif; margin: 20px 0 10px 0;">
-      상세한 사항은 다음 SpreadSheet 를 참조하여 주시기 바랍니다. : <a href='<?= url.replace("/edit", "") ?>#gid=<?= gid ?>'>Daily Report 보기</a>
-    </div>
-  </body>
-</html>
+/**
+ * 'yyyy-mm-dd' date String
+ */
+function _getNowDateString(){
+  return _getISOTimeZoneCorrectedDateString(new Date());
+}
+
+/**
+ * javascript toISOString timezone treatment
+ */
+function _getISOTimeZoneCorrectedDateString(date) {
+  // timezone offset 처리 
+  var tzoffset = date.getTimezoneOffset() * 60000; //offset in milliseconds
+  return (new Date(date.getTime() - tzoffset)).toISOString().substring(0, 10);
+}
