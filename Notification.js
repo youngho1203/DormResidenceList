@@ -94,20 +94,20 @@ function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, 
     var title = getTitle(partialQueryCommand);
     var checkInQueryCommand = partialQueryCommand + " D=False AND R = date '" + dateString + "'";
     var checkOutQueryCommand = partialQueryCommand + " D=True AND S = date '" + dateString + "'";
-    var updateCount = 0;
     //
+    var updateCount = 0;
     if(reportContent[0] == 1) {
       // checkIn Only
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, "신규 입사생 수", true);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, true);
     }
     else if(reportContent[0] == 2) {
       // checkOut Only  
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, "신규 퇴사생 수", false);  
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, false);  
     }
     else {
       // checkIn, CheckOut both
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, "신규 입사생 수", true);
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, "신규 퇴사생 수", false);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, true);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, false);
     }
 
     if(updateCount > 0) {
@@ -138,16 +138,18 @@ function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, 
 /**
  * @return renderer.rowCount
  */
-function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, reportTitle) {
-  var renderer = new Renderer(reportName, queryRange, queryCommand, title); 
-  var checkInMessage = renderer.render();
+function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, isCheckIn) {
+  var reportTitle = isCheckIn ? "신규 입사생 수": "신규 퇴사생 수";
+  var renderer = new Renderer(reportName, queryRange, queryCommand, title, isCheckIn); 
+  var message = renderer.render();
   htmlMessage.append("<div class='sub-title' style='font: normal 14px Roboto, sans-serif; margin: 10px 0 6px 0;'>");
   htmlMessage.append("• ");
   htmlMessage.append(reportTitle);
   htmlMessage.append(" : [ ");
   htmlMessage.append(renderer.rowCount);
   htmlMessage.append(" ]</div>");
-  htmlMessage.append(checkInMessage);
+  htmlMessage.append(message);
+  //
   return renderer.rowCount;
 }
 
@@ -157,6 +159,7 @@ function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, rep
 function getCurrentValue() {
   var lastLow = checkInListsSheet.getLastRow();
   var checkIn = checkInListsSheet.getRange("E3:R" + lastLow).getValues().filter(a => a[0] != '').filter(a => a[13] != '').map(a => { return _getISOTimeZoneCorrectedDateString(a[13])}).toString();
+  //
   lastLow = checkOutListsSheet.getLastRow();
   var checkOut = checkOutListsSheet.getRange("E3:S" + lastLow).getValues().filter(a => a[0] != '').filter(a => a[14] != '').map(a => { return _getISOTimeZoneCorrectedDateString(a[14])}).toString();
   return hash(checkIn) + '|' + hash(checkOut);
