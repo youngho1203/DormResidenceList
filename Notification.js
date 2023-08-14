@@ -94,41 +94,49 @@ function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, 
     var title = getTitle(partialQueryCommand);
     var checkInQueryCommand = partialQueryCommand + " D=False AND R = date '" + dateString + "'";
     var checkOutQueryCommand = partialQueryCommand + " D=True AND S = date '" + dateString + "'";
+    var updateCount = 0;
     //
     if(reportContent[0] == 1) {
       // checkIn Only
-      _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, "신규 입사생 수", true);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, "신규 입사생 수", true);
     }
     else if(reportContent[0] == 2) {
       // checkOut Only  
-      _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, "신규 퇴사생 수", false);  
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, "신규 퇴사생 수", false);  
     }
     else {
       // checkIn, CheckOut both
-      _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, "신규 입사생 수", true);
-      _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, "신규 퇴사생 수", false);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, "신규 입사생 수", true);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, "신규 퇴사생 수", false);
     }
-    //
-    htmlMessage.append(templateFile_2.evaluate().getContent());
-    //
-    var subject = "DEV [광토기숙사] " + reportName + '가 Update 되었습니다.';
-    targetEmailList.split(',').forEach(address => {
-      GmailApp.sendEmail(address, subject, '', { htmlBody: htmlMessage.toString() });
-    });
-    data[2] = reportContent.slice(1).join('|');
-    data[3] = 'SENT'
+
+    if(updateCount > 0) {
+      //
+      htmlMessage.append(templateFile_2.evaluate().getContent());
+      //
+      var subject = "DEV [광토기숙사] " + reportName + '가 Update 되었습니다.';
+      targetEmailList.split(',').forEach(address => {
+        GmailApp.sendEmail(address, subject, '', { htmlBody: htmlMessage.toString() });
+      });
+      data[2] = reportContent.slice(1).join('|');
+      data[3] = 'SENT'
+    }
+    else {
+      data[2] = reportContent.slice(1).join('|');
+      data[3] = 'SKIP'      
+    }
   }
   catch(ex) {
     console.log(ex);
     data[2] = '0|0';
-    data[3] = ex;
+    data[3] = ex.stack;
   }
   // 
   historySheet.appendRow(data);
 }
 
 /**
- *
+ * @return renderer.rowCount
  */
 function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, reportTitle) {
   var renderer = new Renderer(reportName, queryRange, queryCommand, title); 
@@ -140,6 +148,7 @@ function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, rep
   htmlMessage.append(renderer.rowCount);
   htmlMessage.append(" ]</div>");
   htmlMessage.append(checkInMessage);
+  return renderer.rowCount;
 }
 
 /**
