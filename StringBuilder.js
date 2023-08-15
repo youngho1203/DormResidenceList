@@ -31,3 +31,4 @@ StringBuilder.prototype.clear = function () {
 StringBuilder.prototype.toString = function () {
     return this.strings.join("");
 }
+

@@ -28,7 +28,7 @@ function Renderer(reportName, range, queryCommand, columnTitle, isCheckIn) {
 Renderer.prototype.render = function() {
   var data = this.gather();
   var sb = new StringBuilder();
-  sb.append("<table class='gmail-table' style='border: solid 2px #DDEEEE; border-collapse: collapse; border-spacing: 0; font: normal 14px Roboto sans-serif; margin: 10px 0 0 60px; width: 60%;'>");
+  sb.append("<table class='gmail-table' style='border: solid 2px #DDEEEE; border-collapse: collapse; border-spacing: 0; font: normal 14px Roboto sans-serif; margin: 10px 0 0 60px;  width: 60%;'>");
   sb.append("<thead>");
   sb.append("<tr>");
   this.columnTitle.forEach((title, index) => {
@@ -66,7 +66,7 @@ Renderer.prototype.gather = function() {
   var sheetId = this.isCheckIn ? checkInListsSheet.getSheetId() : checkOutListsSheet.getSheetId();
   var url = ws.getUrl().replace("/edit", "");
   var request = url + '/gviz/tq?gid=' + sheetId + '&range=' + this.range + '&tq=' + encodeURIComponent(this.queryCommand);
-  var request_result = UrlFetchApp.fetch(request).getContentText();   
+  var request_result = UrlFetchApp.fetch(request).getContentText();    
   // get json object
   var _from = request_result.indexOf("{");
   var _to   = request_result.lastIndexOf("}")+1;  
@@ -91,3 +91,4 @@ Renderer.prototype.gather = function() {
   
   return result;
 }
+

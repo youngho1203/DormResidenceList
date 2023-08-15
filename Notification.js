@@ -43,7 +43,7 @@ function sendNotification() {
  */
 function getNumberOfCurrentResident() {
   // @todo checkIn, checkOut sheet 분리 적용 implement
-  return checkInListsSheet.getRange("F1:J1").getValues()[0];
+  return checkInListsSheet.getRange("M3:M5").getValues()[0];
 }
 
 /**
@@ -92,8 +92,8 @@ function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, 
     //
     var dateString = _getISOTimeZoneCorrectedDateString(data[0]);    
     var title = getTitle(partialQueryCommand);
-    var checkInQueryCommand = partialQueryCommand + " D=False AND R = date '" + dateString + "'";
-    var checkOutQueryCommand = partialQueryCommand + " D=True AND S = date '" + dateString + "'";
+    var checkInQueryCommand = partialQueryCommand + " D=False AND M = date '" + dateString + "'";
+    var checkOutQueryCommand = partialQueryCommand + " D=True AND N = date '" + dateString + "'";
     //
     var updateCount = 0;
     if(reportContent[0] == 1) {
@@ -110,11 +110,11 @@ function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, 
       updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, false);
     }
 
-    if(updateCount > 0) {
+    if(updateCount > 0) {    
       //
       htmlMessage.append(templateFile_2.evaluate().getContent());
       //
-      var subject = "DEV [광토기숙사] " + reportName + '가 Update 되었습니다.';
+      var subject = "광토기숙사(국제교육원)] " + reportName + '가 Update 되었습니다.';
       targetEmailList.split(',').forEach(address => {
         GmailApp.sendEmail(address, subject, '', { htmlBody: htmlMessage.toString() });
       });
@@ -123,13 +123,13 @@ function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, 
     }
     else {
       data[2] = reportContent.slice(1).join('|');
-      data[3] = 'SKIP'      
+      data[3] = 'SKIP'    
     }
   }
   catch(ex) {
     console.log(ex);
     data[2] = '0|0';
-    data[3] = ex.stack;
+    data[3] = ex;
   }
   // 
   historySheet.appendRow(data);
@@ -158,10 +158,10 @@ function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, isC
  */
 function getCurrentValue() {
   var lastLow = checkInListsSheet.getLastRow();
-  var checkIn = checkInListsSheet.getRange("E3:R" + lastLow).getValues().filter(a => a[0] != '').filter(a => a[13] != '').map(a => { return _getISOTimeZoneCorrectedDateString(a[13])}).toString();
+  var checkIn = checkInListsSheet.getRange("G7:R" + lastLow).getValues().filter(a => a[0] != '').filter(a => a[6] != '').map(a => { return _getISOTimeZoneCorrectedDateString(a[6])}).toString();
   //
   lastLow = checkOutListsSheet.getLastRow();
-  var checkOut = checkOutListsSheet.getRange("E3:S" + lastLow).getValues().filter(a => a[0] != '').filter(a => a[14] != '').map(a => { return _getISOTimeZoneCorrectedDateString(a[14])}).toString();
+  var checkOut = checkOutListsSheet.getRange("G7:S" + lastLow).getValues().filter(a => a[0] != '').filter(a => a[7] != '').map(a => { _getISOTimeZoneCorrectedDateString(a[7])}).toString();
   return hash(checkIn) + '|' + hash(checkOut);
 }
 
@@ -177,15 +177,11 @@ function getLastValue(reportName) {
   return lastValue;
 }
 
-/**
- * table th 이름을 가지고 온다.
- * CheckIn, CheckOut sheet 가 동일하여야 한다.
- */
 function getTitle(partialQueryCommand) {
   // SELECT xxxx WHERE statement
   let cols = partialQueryCommand.substring(7, partialQueryCommand.indexOf("WHERE")).split(",");
   // 2열 이 제목이다.
-  let rangeList = cols.map(c => (c.trim() + 2));
+  let rangeList = cols.map(c => (c.trim() + 6));
   return checkInListsSheet.getRangeList(rangeList).getRanges().map(r => r.getValue());
 }
 

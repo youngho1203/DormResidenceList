@@ -24,5 +24,5 @@ function _getNowDateISOFormattedString(){
 function _getISOTimeZoneCorrectedDateString(date) {
   // timezone offset 처리 
   var tzoffset = date.getTimezoneOffset() * 60000; //offset in milliseconds
-  return (new Date(date.getTime() - tzoffset)).toISOString().substring(0, 10);
+  return (new Date(date.getTime() - tzoffset)).toISOString().slice(0, -1).substring(0, 10);
 }
