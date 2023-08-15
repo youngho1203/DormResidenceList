@@ -14,7 +14,7 @@ limitations under the License.
 /**
  * 'yyyy-mm-dd' date String
  */
-function _getNowDateString(){
+function _getNowDateISOFormattedString(){
   return _getISOTimeZoneCorrectedDateString(new Date());
 }
 
