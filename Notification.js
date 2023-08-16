@@ -43,7 +43,7 @@ function sendNotification() {
  */
 function getNumberOfCurrentResident() {
   // @todo checkIn, checkOut sheet 분리 적용 implement
-  return checkInListsSheet.getRange("M3:M5").getValues()[0];
+  return checkOutListsSheet.getRange("M3:M5").getValues();
 }
 
 /**
