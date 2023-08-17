@@ -63,6 +63,8 @@ Renderer.prototype.render = function() {
  * rendering 을 위한 data 를 만든다.
  */
 Renderer.prototype.gather = function() {
+  // arrival 과 checkIn 은 항상 동일한 checkInListsSheet
+  // checkOut 은 동일하거나 다르거나 checkOutListsSheet
   var sheetId = this.isCheckIn ? checkInListsSheet.getSheetId() : checkOutListsSheet.getSheetId();
   var url = ws.getUrl().replace("/edit", "");
   var request = url + '/gviz/tq?gid=' + sheetId + '&range=' + this.range + '&tq=' + encodeURIComponent(this.queryCommand);

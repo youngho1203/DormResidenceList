@@ -12,6 +12,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 /**
+ * binary array to int
+ */
+function binArraytoInt(array) {
+   return array.reduce((acc, val) => {
+      return (acc << 1) | val;
+   });
+};
+
+/**
  * 'yyyy-mm-dd' date String
  */
 function _getNowDateISOFormattedString(){
