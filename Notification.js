@@ -225,18 +225,3 @@ function getTitle(partialQueryCommand) {
   let rangeList = cols.map(c => (c.trim() + 2));
   return checkInListsSheet.getRangeList(rangeList).getRanges().map(r => r.getValue());
 }
-
-/**
- * Simple string hash for checking two string difference
- */
-function hash(str) {
-  var hash = 0,
-  i, chr;
-  if (str.length === 0) return hash;
-  for (i = 0; i < str.length; i++) {
-    chr = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + chr;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return hash;
-}
