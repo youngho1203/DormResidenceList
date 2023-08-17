@@ -18,6 +18,7 @@ const checkInSheetName = configSheet.getRange("J2").getValue();
 const checkInListsSheet = ws.getSheetByName(checkInSheetName);
 const checkOutSheetName = configSheet.getRange("K2").getValue();
 const checkOutListsSheet = ws.getSheetByName(checkOutSheetName);
+const reportTitleArray = ["신규 입사생 수", "신규 퇴사생 수"];
 
 /**
  * 주기적으로 check out report 를 email 로 보낸다.
@@ -46,29 +47,26 @@ function getNumberOfCurrentResident() {
   return checkOutListsSheet.getRange("M3:M5").getValues();
 }
 
-/**
+/** 
  * 현황 List 가 update 되었는지 확인한다.
- * 0 : no change
- * 1 : checkIn change
- * 2 : checkOut change
- * 3 : checkIn, checkOut both change
+ * checkIn | checkOut
+ * 00 : no change
+ * 01 : checkOut change only
+ * 10 : checkIn change only
+ * 11 : checkIn, checkOut both change
  */
 function isModified(reportName) {
-  var lastValue = getLastValue(reportName).split('|');
-  var currentValue = getCurrentValue().split('|');
+  //
+  let lastValue = getLastValue(reportName).split('|');
+  let currentValue = getCurrentValue().split('|');
+  let compareArray = [ 
+    lastValue[0] == currentValue[0] ? 0 : 1,
+    lastValue[1] == currentValue[1] ? 0 : 1, 
+  ];
+  //
+  let n = binArraytoInt(compareArray);
 
-  if(lastValue[0] == currentValue[0] && lastValue[1] == currentValue[1]) {
-    return [0, currentValue[0], currentValue[1]];
-  }
-  else if(lastValue[0] != currentValue[0] && lastValue[1] == currentValue[1]) {
-    return [1, currentValue[0], currentValue[1]];
-  }
-  else if(lastValue[0] == currentValue[0] && lastValue[1] != currentValue[1]) {
-    return [2, currentValue[0], currentValue[1]];
-  }
-  else {
-    return [3, currentValue[0], currentValue[1]];
-  }
+  return [n, ...currentValue];
 }
 
 /**
@@ -95,19 +93,20 @@ function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, 
     var checkInQueryCommand = partialQueryCommand + " D=False AND M = date '" + dateString + "'";
     var checkOutQueryCommand = partialQueryCommand + " D=True AND N = date '" + dateString + "'";
     //
+    let n = reportContent[0];
     var updateCount = 0;
-    if(reportContent[0] == 1) {
-      // checkIn Only
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, true);
-    }
-    else if(reportContent[0] == 2) {
+    if(n < 2) {
       // checkOut Only  
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, false);  
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, -1);
+    }
+    else if(n < 3) {
+      // checkIn Only
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, 1); 
     }
     else {
       // checkIn, CheckOut both
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, true);
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, false);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, 1);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, -1);
     }
 
     if(updateCount > 0) {    
@@ -138,8 +137,13 @@ function sendEmail(now, reportName, reportContent, targetEmailList, queryRange, 
 /**
  * @return renderer.rowCount
  */
-function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, isCheckIn) {
-  var reportTitle = isCheckIn ? "신규 입사생 수": "신규 퇴사생 수";
+function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, type) {
+  /**
+   * type 1 : checkIn
+   * type -1 : checkOut
+   */
+  let reportTitle = reportTitleArray[type];
+  let isCheckIn = type > -1; 
   var renderer = new Renderer(reportName, queryRange, queryCommand, title, isCheckIn); 
   var message = renderer.render();
   htmlMessage.append("<div class='sub-title' style='font: normal 14px Roboto, sans-serif; margin: 10px 0 6px 0;'>");
@@ -183,19 +187,4 @@ function getTitle(partialQueryCommand) {
   // 2열 이 제목이다.
   let rangeList = cols.map(c => (c.trim() + 6));
   return checkInListsSheet.getRangeList(rangeList).getRanges().map(r => r.getValue());
-}
-
-/**
- * Simple string hash for checking two string difference
- */
-function hash(str) {
-  var hash = 0,
-  i, chr;
-  if (str.length === 0) return hash;
-  for (i = 0; i < str.length; i++) {
-    chr = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + chr;
-    hash |= 0; // Convert to 32bit integer
-  }
-  return hash;
 }
