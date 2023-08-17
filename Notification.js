@@ -172,7 +172,7 @@ function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, typ
    * type 1 : checkIn
    * type -1 : checkOut
    */
-  let reportTitle = reportTitleArray[type];
+  let reportTitle = type < 0 ? reportTitleArray[2] : reportTitleArray[type];
   let isCheckIn = type > -1; 
   var renderer = new Renderer(reportName, queryRange, queryCommand, title, isCheckIn); 
   var message = renderer.render();
