@@ -11,6 +11,18 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+/** 
+ * Returns true if the cell where cellData was read from is empty.
+ */
+function isCellEmpty(cellData) {
+  return typeof (cellData) == "string" && cellData == "";
+}
+
+function getTriggerById(triggerId){
+  let triggers = ScriptApp.getProjectTriggers();
+  return triggers.filter(t => t.getUniqueId() == triggerId);
+}
+
 /**
  * binary array to int
  */
@@ -30,10 +42,12 @@ function _getNowDateISOFormattedString(){
 /**
  * javascript toISOString timezone treatment
  */
-function _getISOTimeZoneCorrectedDateString(date) {
+function _getISOTimeZoneCorrectedDateString(date, dateTime) {
   // timezone offset 처리 
-  var tzoffset = date.getTimezoneOffset() * 60000; //offset in milliseconds
-  return (new Date(date.getTime() - tzoffset)).toISOString().substring(0, 10);
+  let tzoffset = date.getTimezoneOffset() * 60000; //offset in milliseconds
+  let correctedDate = new Date(date.getTime() - tzoffset);
+  // 2011-10-05T14:48:00.000Z
+  return dateTime ? correctedDate.toISOString().substring(0, 19).replace("T", ' ') : correctedDate.toISOString().substring(0, 10);
 }
 
 /**

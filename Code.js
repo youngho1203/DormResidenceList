@@ -31,13 +31,23 @@ function onEdit(e) {
   }
   if(range_modified.getColumn() == 11){
     // 납부
-    let value = range_modified.getValue() == 'o' ? new Date().toISOString().substring(0,10) : '';
+    let value = range_modified.getValue() == 'o' ? _getNowDateISOFormattedString() : '';
+    // 입사일 : R
     range_modified.offset(0,7,1,1).setValue(value);
+    // V,W,X
+    range_modified.offset(0,12,1,1).setValue(new Date().toString());
     return;
   }
   if(range_modified.getColumn() !== CHECK_OUT_COLUMN ) {
     return;
   }
+  // 퇴사
+  let value = range_modified.getValue() ? _getNowDateISOFormattedString() : '';
+  // 퇴사일 : S
+  range_modified.offset(0,15,1,1).setValue(value);
+  // V,W,X
+  value = range_modified.getValue() ? new Date().toString() : '';
+  range_modified.offset(0,20,1,1).setValue(value);
   // change style
   changeStyleForCheckOut(range_modified);
 }
@@ -55,9 +65,4 @@ function changeStyleForCheckOut(range) {
   
   // has_extension column
   _extension_cell.setTextStyle(cell_text_style);
-}
-
-// Returns true if the cell where cellData was read from is empty.
-function isCellEmpty(cellData) {
-  return typeof (cellData) == "string" && cellData == "";
 }

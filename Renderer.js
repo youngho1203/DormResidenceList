@@ -68,12 +68,16 @@ Renderer.prototype.gather = function() {
   var sheetId = this.isCheckIn ? checkInListsSheet.getSheetId() : checkOutListsSheet.getSheetId();
   var url = ws.getUrl().replace("/edit", "");
   var request = url + '/gviz/tq?gid=' + sheetId + '&range=' + this.range + '&tq=' + encodeURIComponent(this.queryCommand);
-  var request_result = UrlFetchApp.fetch(request).getContentText();   
+  var request_result = UrlFetchApp.fetch(request).getContentText();
   // get json object
   var _from = request_result.indexOf("{");
   var _to   = request_result.lastIndexOf("}")+1;  
   var jsonText = request_result.slice(_from, _to);
   var parsedObject = JSON.parse(jsonText);
+  if(parsedObject.status !== 'ok') {
+    // console.log(this.queryCommand, request);
+    throw new Error(this.queryCommand + " : " + JSON.stringify(parsedObject));
+  }
   this.columnCount = parsedObject.table.cols.length;
   var result = [];
   parsedObject.table.rows.forEach(row => {
