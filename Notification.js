@@ -51,7 +51,7 @@ function sendNotification(e) {
   configSheet.getRange("A15:G" + lastLow).getValues().forEach(array => {
     // 순번, reportName, report time, target email list, queryRange, partialQueryCommand, templateName
     var modifyValue = isModified(array[1]);
-    if(true || modifyValue[0] > 0) {
+    if(modifyValue[0] > 0) {
       sendEmail(now, array[1], triggerType, modifyValue, array[3], array[4], array[5], array[6], numberOfresidence);
     }
   });

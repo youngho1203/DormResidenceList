@@ -18,6 +18,9 @@ function isCellEmpty(cellData) {
   return typeof (cellData) == "string" && cellData == "";
 }
 
+/**
+ * trigger 를 찾는다.
+ */
 function getTriggerById(triggerId){
   let triggers = ScriptApp.getProjectTriggers();
   return triggers.filter(t => t.getUniqueId() == triggerId);
