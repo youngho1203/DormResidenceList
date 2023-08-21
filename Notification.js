@@ -198,7 +198,7 @@ function _doRender(htmlMessage, reportName, queryRange, queryCommand, type, trig
    */ 
   queryCommand = queryCommand.slice(0, 7) + dateTimeColumnName + ',' + queryCommand.slice(7);
   let title = getTitle(queryCommand);
-  let referenceDateTime
+  let referenceDateTime;
   if(triggerType == 'TL') {
     referenceDateTime = getLastTimeStamp(reportName, now, 'TM');
   }
