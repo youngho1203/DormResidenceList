@@ -11,7 +11,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-function Renderer(reportName, range, queryCommand, columnTitle, isCheckIn) {
+function Renderer(reportName, range, queryCommand, columnTitle, isCheckIn, referenceDateTime) {
   this.reportName = reportName;
   this.range = range;
   this.queryCommand = queryCommand;
@@ -19,6 +19,7 @@ function Renderer(reportName, range, queryCommand, columnTitle, isCheckIn) {
   this.columnCount =0;
   this.rowCount = 0;
   this.isCheckIn = isCheckIn;
+  this.referenceDateTime = referenceDateTime;
 }
 
 /**
@@ -34,8 +35,13 @@ Renderer.prototype.render = function() {
   this.columnTitle.forEach((title, index) => {
     sb.append("<th class='");
     sb.append("col");
-    sb.append((index + 1));
-    sb.append("' style='background-color: #DDEFEF; border: solid 1px black; color: #336B6B; padding: 4px; text-align: center; text-shadow: 1px 1px 1px #fff;'>");
+    sb.append(index);
+    if(index > 0) {
+      sb.append("' style='background-color: #DDEFEF; border: solid 1px black; color: #336B6B; padding: 4px; text-align: center; text-shadow: 1px 1px 1px #fff;'>");
+    }
+    else {
+      sb.append("' style='display:none'>");
+    }
     sb.append(title);
     sb.append("</th>");
   });
@@ -44,11 +50,29 @@ Renderer.prototype.render = function() {
   sb.append("</tr>");
   data.forEach(row => {
     sb.append("<tr>");
+    // td 에 background-color 를 주기 위한 criteria 
+    let colDate;
     row.forEach((col, index) => {
       sb.append("<td class='");
       sb.append("col");
-      sb.append((index + 1));
-      sb.append("' style='border: solid 1px #DDEEEE; color: #333; padding: 4px; text-align: center; text-shadow: 1px 1px 1px #fff;'>");
+      sb.append(index);
+      if(index > 0) {
+        sb.append("' style='border: solid 1px #DDEEEE; color: #333; padding: 4px; text-align: center; text-shadow: 1px 1px 1px #fff;");
+        if(!this.referenceDateTime) {
+          // console.log("SKIP");
+        }
+        else {
+          if(new Date(this.referenceDateTime).getTime() > new Date(colDate).getTime()) {
+            // row 에 background
+            sb.append(" background-color: #ddd !important");
+          }
+        }
+        sb.append("'>");     
+      }
+      else {
+        sb.append("' style='display:none'>");
+        colDate = col;
+      }  
       sb.append(col);
       sb.append("</td>");
     });
@@ -75,7 +99,7 @@ Renderer.prototype.gather = function() {
   var jsonText = request_result.slice(_from, _to);
   var parsedObject = JSON.parse(jsonText);
   if(parsedObject.status !== 'ok') {
-    // console.log(this.queryCommand, request);
+    console.log("ERROR ", this.queryCommand, request);
     throw new Error(this.queryCommand + " : " + JSON.stringify(parsedObject));
   }
   this.columnCount = parsedObject.table.cols.length;

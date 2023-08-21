@@ -31,7 +31,7 @@ function sendNotification(e) {
    *                TL : timebased latest ( 23시 ~ 24시 사이 )
    */
   let triggerType = 'D'; // default debug
-  var now = new Date();  
+  var now = new Date();
   if(e) { 
     // timebased trigger 
     let trigger = getTriggerById(e.triggerUid);
@@ -42,7 +42,6 @@ function sendNotification(e) {
       throw new Error("Don't know the Trigger Source", e.triggerUid)
     }
   }
-
   // simple trick to set Date
   reportSheet.getRange("A1").setValue(now);
   // @todo checkIn, checkOut sheet 를 분리함에 따라서, 보다 복잡해졌다.
@@ -111,8 +110,7 @@ function sendEmail(now, reportName, triggerType, reportContent, targetEmailList,
     var htmlMessage = new StringBuilder();
     htmlMessage.append(templateFile_1.evaluate().getContent());
     //
-    var dateString = _getISOTimeZoneCorrectedDateString(data[0]);    
-    var title = getTitle(partialQueryCommand);
+    var dateString = _getISOTimeZoneCorrectedDateString(data[0]);
     let arrivalQueryCommand = partialQueryCommand + " D=False AND U = date '" + dateString + "'";
     let checkInQueryCommand = partialQueryCommand + " D=False AND R = date '" + dateString + "'";
     let checkOutQueryCommand = partialQueryCommand + " D=True AND S = date '" + dateString + "'";
@@ -121,41 +119,41 @@ function sendEmail(now, reportName, triggerType, reportContent, targetEmailList,
     var updateCount = 0;
     if(n < 2) {
       // 001 : checkOut change only
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, -1, triggerType, now);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, 2, triggerType, now);
     }
     else if(n < 3) {
       // 010 : checkIn change only
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, 1, triggerType, now);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, 1, triggerType, now);
     }
     else if (n < 4) {
       // 011 : checkIn, checkOut both change
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, 1, triggerType, now);
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, -1, triggerType, now);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, 1, triggerType, now);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, 2, triggerType, now);
     }
     else if (n < 5) {
       // 100 : arrival change only
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, arrivalQueryCommand, title, 0, triggerType, now);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, arrivalQueryCommand, 0, triggerType, now);
     }
     else if(n < 6) {
       // 101 : arrival, checkOut both change
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, arrivalQueryCommand, title, 0, triggerType, now);
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, -1, triggerType, now);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, arrivalQueryCommand, 0, triggerType, now);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, 2, triggerType, now);
     }
     else if(n < 7) {
       // 110 : arrival, checkIn both change 
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, arrivalQueryCommand, title, 0, triggerType, now);
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, 1, triggerType, now);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, arrivalQueryCommand, 0, triggerType, now);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, 1, triggerType, now);
     }
     else if(n < 8){
       // 111 : arrival, checkIn, checkOut all change
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, arrivalQueryCommand, title, 0, triggerType, now);
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, title, 1, triggerType, now);
-      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, title, -1, triggerType, now);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, arrivalQueryCommand, 0, triggerType, now);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkInQueryCommand, 1, triggerType, now);
+      updateCount = updateCount + _doRender(htmlMessage, reportName, queryRange, checkOutQueryCommand, 2, triggerType, now);
     }
     else {
       throw new Error("Not Supported [" + n + "]");
     }
-
+    //
     if(updateCount > 0) {
       //
       htmlMessage.append(templateFile_2.evaluate().getContent());
@@ -182,38 +180,30 @@ function sendEmail(now, reportName, triggerType, reportContent, targetEmailList,
 }
 
 /**
+ * @param type : 0 : arrival, 1 : checkIn, 2 : checkOut
  * @return renderer.rowCount
  */
-function _doRender(htmlMessage, reportName, queryRange, queryCommand, title, type, triggerType, now) {
-  /**
-   * type 0 : arrival
-   * type 1 : checkIn
-   * type -1 : checkOut
+function _doRender(htmlMessage, reportName, queryRange, queryCommand, type, triggerType, now) {
+  /** 
+   * queryCommand 1번 column 에 dateTimeDataColumn 을 insert 한다.
+   *  
    */
-  let reportTitle = type < 0 ? reportTitleArray[2] : reportTitleArray[type];
-  let isCheckIn = type > -1; 
+  let reportTitle = reportTitleArray[type];
+  let dateTimeColumnName = dateTimeDataColumn[type];
+  let isCheckIn = type < 2; // 0, 1  
+  /** 
+   * queryCommand 1번 column 에 dateTimeDataColumn 을 insert 한다.
+   * SELECT A,B,C --> SELECT X,A,B,C 
+   */ 
+  queryCommand = queryCommand.slice(0, 7) + dateTimeColumnName + ',' + queryCommand.slice(7);
+  let title = getTitle(queryCommand);
+  let referenceDateTime
   if(triggerType == 'TL') {
-    // timebased 23시 ~ 24시 사이 trigger 이면
-    // 바로 앞 middle report 이후 추가된 것을 처리한다.
-    let dateTime = getLastTimeStamp(reportName, now, 'TM');
-    let dateTimeColumnName = type < 0 ? dateTimeDataColumn[2] : dateTimeDataColumn[type];
-    let addQueryCommand = queryCommand + " AND " + dateTimeColumnName + " > dateTime '" + dateTime + "'";
-    let addTitle = '오늘 중간 보고 [' + dateTime + '] 이후 추가 ' + reportTitle.substring(3);
-    //
-    var renderer = new Renderer(reportName, queryRange, addQueryCommand, title, isCheckIn); 
-    var message = renderer.render();
-    if(renderer.rowCount > 0) {
-      htmlMessage.append("<div class='sub-title' style='font: normal 14px Roboto, sans-serif; margin: 10px 0 6px 0;'>");
-      htmlMessage.append("• ");
-      htmlMessage.append(addTitle);
-      htmlMessage.append(" : [ ");
-      htmlMessage.append(renderer.rowCount);
-      htmlMessage.append(" ]</div>");
-      htmlMessage.append(message);
-    }
+    referenceDateTime = getLastTimeStamp(reportName, now, 'TM');
   }
   //
-  var renderer = new Renderer(reportName, queryRange, queryCommand, title, isCheckIn); 
+  queryCommand = queryCommand + ' order by ' + dateTimeColumnName;
+  var renderer = new Renderer(reportName, queryRange, queryCommand, title, isCheckIn, referenceDateTime); 
   var message = renderer.render();
   htmlMessage.append("<div class='sub-title' style='font: normal 14px Roboto, sans-serif; margin: 10px 0 6px 0;'>");
   htmlMessage.append("• ");
@@ -257,7 +247,7 @@ function getLastValue(reportName) {
  * reportType : TM : moddle, TL : latest, D : Test
  */
 function getLastTimeStamp(reportName, date, triggerType) {
-  let timeStamp = date.toString();
+  let timeStamp;
   let today_date = _getISOTimeZoneCorrectedDateString(date);
   let lastLow = historySheet.getLastRow();
   // [TimeStamp,	Report Name,	Report,	TriggerType ]
@@ -268,8 +258,8 @@ function getLastTimeStamp(reportName, date, triggerType) {
     .forEach(array => {
       timeStamp = array[0];
   });
-  // console.log();
-  return _getISOTimeZoneCorrectedDateString(new Date(timeStamp), true);
+  //
+  return timeStamp ? _getISOTimeZoneCorrectedDateString(new Date(timeStamp), true) : undefined;
 }
 
 /**
