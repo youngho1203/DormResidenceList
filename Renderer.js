@@ -29,7 +29,7 @@ function Renderer(reportName, range, queryCommand, columnTitle, isCheckIn, refer
 Renderer.prototype.render = function() {
   var data = this.gather();
   var sb = new StringBuilder();
-  sb.append("<table class='gmail-table' style='border: solid 2px #DDEEEE; border-collapse: collapse; border-spacing: 0; font: normal 14px Roboto sans-serif; margin: 10px 0 0 60px; width: 60%;'>");
+  sb.append("<table class='gmail-table' style='border: solid 1px #336B6B; border-collapse: collapse; border-spacing: 0; font: normal 14px Roboto sans-serif; margin: 10px 0 0 60px; width: 60%;'>");
   sb.append("<thead>");
   sb.append("<tr>");
   this.columnTitle.forEach((title, index) => {
@@ -37,7 +37,7 @@ Renderer.prototype.render = function() {
     sb.append("col");
     sb.append(index);
     if(index > 0) {
-      sb.append("' style='background-color: #DDEFEF; border: solid 1px black; color: #336B6B; padding: 4px; text-align: center; text-shadow: 1px 1px 1px #fff;'>");
+      sb.append("' style='background-color: #DDEFEF; border: solid 1px #336B6B; color: #336B6B; padding: 4px; text-align: center; text-shadow: 1px 1px 1px #fff;'>");
     }
     else {
       sb.append("' style='display:none'>");
@@ -57,7 +57,7 @@ Renderer.prototype.render = function() {
       sb.append("col");
       sb.append(index);
       if(index > 0) {
-        sb.append("' style='border: solid 1px #DDEEEE; color: #333; padding: 4px; text-align: center; text-shadow: 1px 1px 1px #fff;");
+        sb.append("' style='border: solid 1px #336B6B; color: #333; padding: 4px; text-align: center; text-shadow: 1px 1px 1px #fff;");
         if(!this.referenceDateTime) {
           // console.log("SKIP");
         }
