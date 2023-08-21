@@ -23,6 +23,7 @@ const dateTimeDataColumn = [ 'V', 'W', 'X'];
 
 /**
  * 주기적으로 check out report 를 email 로 보낸다.
+ * @TODO report table 첨부 file 지원
  */
 function sendNotification(e) {
   /**
@@ -99,8 +100,9 @@ function sendEmail(now, reportName, triggerType, reportContent, targetEmailList,
   var data = [now, reportName, '', triggerType, ''];
   try{
     //
+    var dateString = _getISOTimeZoneCorrectedDateString(data[0]);
     var templateFile_1 = HtmlService.createTemplateFromFile(templateName + " 앞부분");
-    templateFile_1.date = data[0];
+    templateFile_1.date = dateString;
     templateFile_1.numberOfresidence = numberOfresidence;
     //
     var templateFile_2 = HtmlService.createTemplateFromFile(templateName + " 뒷부분");
@@ -110,7 +112,6 @@ function sendEmail(now, reportName, triggerType, reportContent, targetEmailList,
     var htmlMessage = new StringBuilder();
     htmlMessage.append(templateFile_1.evaluate().getContent());
     //
-    var dateString = _getISOTimeZoneCorrectedDateString(data[0]);
     let arrivalQueryCommand = partialQueryCommand + " D=False AND U = date '" + dateString + "'";
     let checkInQueryCommand = partialQueryCommand + " D=False AND R = date '" + dateString + "'";
     let checkOutQueryCommand = partialQueryCommand + " D=True AND S = date '" + dateString + "'";
