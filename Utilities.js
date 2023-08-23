@@ -11,6 +11,22 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+/**
+ * sample code
+ * var resp = UrlFetchApp.fetch(link); 
+      if (resp.getResponseCode() == 200){
+        var blob = Utilities.newBlob(resp.getContent());
+        Logger.log(blob.getDataAsString());
+        //            var pdf = blob.getAs('application/pdf'); 
+        var options = {'attachments' : 
+                       {'fileName' : 'test',
+                        'mimeType' : 'application/pdf',
+                        'content' : blob.getBytes()
+                       }
+                      };
+        MailApp.sendEmail(TO_EMAIL, 'Subject','', options)
+      }
+ */
 /** 
  * Returns true if the cell where cellData was read from is empty.
  */
